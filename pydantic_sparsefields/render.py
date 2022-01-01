@@ -12,8 +12,8 @@ from .path_put import path_put
 async def render_fieldset_model(
     model: BaseModel,
     fieldsets: List[str],
-    maximum_expansion_depth: int,
-    raise_error_on_expansion_not_found: bool,
+    maximum_expansion_depth: int = 5,
+    raise_error_on_expansion_not_found: bool = False,
     expansion_context: Any = None,
     exclude_unset: bool = False,
     exclude_defaults: bool = False,
