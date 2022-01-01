@@ -25,10 +25,38 @@ class ExpansionBase(BaseModel, abc.ABC):
 
     @abc.abstractmethod
     def expand(self, source_model: BaseModel, context: Any) -> Awaitable:
+        """
+        Seek out and expand based on a model.
+
+        parameters:
+            source_model:  A BaseModel instance from which to pick attributes
+                           that drive the expansion.
+
+            context:       The object passed in to render_fieldset_model.expansion_context
+
+        Return:
+            Any Awaitable that will resolve to:
+                * A BaseModel instance
+                * A scalar value
+                * A list of the BaseModel or a list of scalar values
+        """
         ...
 
     @abc.abstractmethod
-    def get_shape(self, source_model: BaseModel) -> Type:
+    def get_shape(self, source_model: BaseModel, context: Any) -> Type:
+        """
+        Return the annotation that describes the concrete type that the
+        awaitable from `expand` will return.
+
+        This should be the concrete subclass of the BaseModel or the type
+        of scalar.  If expand returns a list then the shape returned should
+        be a typing.List[whatever].
+
+        Examples:
+            * MyModel
+            * typing.List[MyModel]
+            * typing.List[str]
+        """
         ...
 
 
@@ -58,7 +86,7 @@ class ModelExpansion(ExpansionBase):
 
         return value
 
-    def get_shape(self, source_model: BaseModel) -> Type:
+    def get_shape(self, source_model: BaseModel, context: Any) -> Type:
         method = getattr(source_model, self.expansion_method_name, None)
         if not method:
             raise Exception(

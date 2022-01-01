@@ -17,7 +17,10 @@ SEQUENCE_SHAPES = (
 
 
 def fieldset_to_includes(
-    fields_request: List[str], model_data: Any, path: List[Union[str, int]] = None
+    fields_request: List[str],
+    model_data: Any,
+    path: List[Union[str, int]] = None,
+    expansion_context: Any = None,
 ) -> Tuple[dict, List[ExpansionInstruction]]:
     """
     Recursively descend a fieldsets list along with a pydantic model and produce:
@@ -135,7 +138,7 @@ def fieldset_to_includes(
             expansion := getattr(model.__config__, "fieldsets", {}).get(field)
         ) and isinstance(expansion, ExpansionBase):
             if (
-                (shape := expansion.get_shape(model))
+                (shape := expansion.get_shape(model, expansion_context))
                 and hasattr(shape, "__origin__")
                 and issubclass(shape.__origin__, list)
                 and isinstance(model_data, list)
