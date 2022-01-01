@@ -52,6 +52,10 @@ def pydantic_api(
 
             return result
 
+        # Normally wrapping functions with decorators leaves no easy
+        # way to tell who is doing the wrapping and for what purpose.
+        # This adds some markers that are useful for introspection of
+        # endpoints (such as generating schema).
         wrapped_endpoint.__pydantic_api__ = {  # type: ignore
             "name": name,
             "tags": tags,
