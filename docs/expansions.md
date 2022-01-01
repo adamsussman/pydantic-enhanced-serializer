@@ -110,15 +110,11 @@ The result will look like:
 
 ```Python
 class ModelExpansion:
-    merge_fields_upwards: Optional[bool] = False
     expansion_method_name: str
+    merge_fields_upwards: Optional[bool] = False
+    response_model: Optional[pydantic.BaseModel] = None
 ```
 
-**merge_fields_upwards**: Optional, default False.  If true, the
-expander will attempt to merge items inside the object returned by
-expansion into the parent object.  If false, then the name of expansion
-will become a key in the parent object with its value set to the expansion
-result.
 
 **expansion_method_name**: Required.  Name of the method
 on the model which will be called by the expander.
@@ -141,6 +137,16 @@ The return type can be:
 
 * An `Awaitable` (asyncio Future, Task or coroutine) that resolves
 to any of the above.
+
+**merge_fields_upwards**: Optional, default False.  If true, the
+expander will attempt to merge items inside the object returned by
+expansion into the parent object.  If false, then the name of expansion
+will become a key in the parent object with its value set to the expansion
+result.
+
+**response_model**: Optional subclass of `pydantic.BaseModel` the
+expanded object will be cast to.  This is mainly used as a type
+hint by the pydantic JSON spec generator.
 
 If possible, multiple expansions in a single request that return
 awaitables will be coalesced for more efficient lookups (such as
