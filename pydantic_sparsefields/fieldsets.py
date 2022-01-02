@@ -137,12 +137,7 @@ def fieldset_to_includes(
         elif (
             expansion := getattr(model.__config__, "fieldsets", {}).get(field)
         ) and isinstance(expansion, ExpansionBase):
-            if (
-                (shape := expansion.get_shape(model, expansion_context))
-                and hasattr(shape, "__origin__")
-                and issubclass(shape.__origin__, list)
-                and isinstance(model_data, list)
-            ):
+            if isinstance(model_data, list):
                 # We need to create an expansion per list item
                 for idx, source_model in enumerate(model_data):
                     expansions.append(

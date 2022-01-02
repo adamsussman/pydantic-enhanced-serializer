@@ -265,7 +265,7 @@ result = render_fieldset_model(
 
 If you want to implement your own expansion method, subclass
 `pydantic_sparsefields.models.ExpansionBase` and implement the
-`expand` and `get_shape` methods.
+`expand` methods.
 
 Note that the `expand` return must be an Awaitable that resolves
 to a concrete pydantic model, or something python's JSON serializer

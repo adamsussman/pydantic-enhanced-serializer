@@ -1,5 +1,4 @@
 import abc
-import inspect
 from asyncio import get_event_loop, isfuture
 from typing import Any, Awaitable, List, Optional, Type, Union
 
@@ -42,23 +41,6 @@ class ExpansionBase(BaseModel, abc.ABC):
         """
         ...
 
-    @abc.abstractmethod
-    def get_shape(self, source_model: BaseModel, context: Any) -> Type:
-        """
-        Return the annotation that describes the concrete type that the
-        awaitable from `expand` will return.
-
-        This should be the concrete subclass of the BaseModel or the type
-        of scalar.  If expand returns a list then the shape returned should
-        be a typing.List[whatever].
-
-        Examples:
-            * MyModel
-            * typing.List[MyModel]
-            * typing.List[str]
-        """
-        ...
-
 
 class ModelExpansion(ExpansionBase):
     """
@@ -85,17 +67,6 @@ class ModelExpansion(ExpansionBase):
             return future
 
         return value
-
-    def get_shape(self, source_model: BaseModel, context: Any) -> Type:
-        method = getattr(source_model, self.expansion_method_name, None)
-        if not method:
-            raise Exception(
-                f"No such expansion method `{self.expansion_method_name}` found "
-                f"on `{source_model.__class__}`"
-            )
-
-        signature = inspect.signature(method)
-        return signature.return_annotation
 
 
 class ExpansionInstruction(BaseModel):
