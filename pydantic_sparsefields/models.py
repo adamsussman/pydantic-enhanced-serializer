@@ -1,12 +1,12 @@
 import abc
 from asyncio import get_event_loop, isfuture
-from typing import Any, Awaitable, List, Optional, Type, Union
+from typing import Any, Awaitable, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
 
 class ExpansionBase(BaseModel, abc.ABC):
-    response_model: Optional[Type] = Field(
+    response_model: Optional[Any] = Field(
         description=(
             "Response model the expanded object will be cast to.  This is "
             "mainly used as a type hint by the schema generator"
