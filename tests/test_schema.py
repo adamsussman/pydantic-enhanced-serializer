@@ -1,4 +1,3 @@
-import re
 from typing import List
 
 from pydantic import BaseModel
@@ -6,109 +5,330 @@ from pydantic import BaseModel
 from pydantic_sparsefields import ModelExpansion, augment_schema_with_fieldsets
 
 
-def test_schema_augment_reponse_description() -> None:
-    class ExpandedThing(BaseModel):
-        ex1: str
-        ex2: str
-
-        class Config:
-            fieldsets = {"default": ["ex1", "ex2"]}
-
-    class Response(BaseModel):
-        """Regular docstring here"""
-
+def test_fields_in_fieldset() -> None:
+    class Thing(BaseModel):
         field1: str
         field2: str
-        field3: int
+        field3: str
+
+        class Config:
+            fieldsets = {
+                "extra": ["field1", "field2"],
+                "extra2": ["field2", "field3"],
+            }
+
+    augment_schema_with_fieldsets(Thing)
+
+    schema = Thing.schema()
+    assert schema
+    assert schema["properties"]
+
+    assert (
+        schema["properties"]["field1"]["description"]
+        == "Included in fieldset(s): extra."
+    )
+    assert (
+        schema["properties"]["field2"]["description"]
+        == "Included in fieldset(s): extra, extra2."
+    )
+    assert (
+        schema["properties"]["field3"]["description"]
+        == "Included in fieldset(s): extra2."
+    )
+
+
+def test_fields_in_default() -> None:
+    class Thing(BaseModel):
+        field1: str
+        field2: str
+        field3: str
 
         class Config:
             fieldsets = {
                 "default": ["field1", "field2"],
-                "extra": ["field3"],
-                "thing": ModelExpansion(
-                    expansion_method_name="foo", response_model=ExpandedThing
-                ),
+                "extra": ["field2", "field3"],
             }
 
-    augment_schema_with_fieldsets(Response)
+    augment_schema_with_fieldsets(Thing)
 
-    response_schema = Response.schema()
-    assert response_schema
-    assert "Regular docstring here" in response_schema["description"]
-    assert "Available fieldsets and expansions" in response_schema["description"]
-    assert re.search(
-        r"Default Fields:.* field1, field2",
-        response_schema["description"],
-    )
-    assert re.search(r"extra.* field3", response_schema["description"])
-    assert re.search(
-        r"thing.* Expansion of type ExpandedThing",
-        response_schema["description"],
-    )
+    schema = Thing.schema()
+    assert schema
+    assert schema["properties"]
 
-    expanded_schema = ExpandedThing.schema()
-    assert expanded_schema
-    assert expanded_schema["description"]
-    assert "Available fieldsets and expansions" in expanded_schema["description"]
-    assert re.search(
-        r"Default Fields:.* ex1, ex2",
-        expanded_schema["description"],
+    assert "description" not in schema["properties"]["field1"]
+    assert (
+        schema["properties"]["field2"]["description"]
+        == "Included in fieldset(s): extra."
+    )
+    assert (
+        schema["properties"]["field3"]["description"]
+        == "Included in fieldset(s): extra."
     )
 
 
-def test_schema_augment_reponse_nested_description() -> None:
-    class Item(BaseModel):
-        """Regular docstring here"""
-
+def test_fields_star_default() -> None:
+    class Thing(BaseModel):
         field1: str
         field2: str
+        field3: str
+
+        class Config:
+            fieldsets = {
+                "default": ["*"],
+            }
+
+    augment_schema_with_fieldsets(Thing)
+
+    schema = Thing.schema()
+    assert schema
+    assert schema["properties"]
+
+    assert "description" not in schema["properties"]["field1"]
+    assert "description" not in schema["properties"]["field2"]
+    assert "description" not in schema["properties"]["field3"]
+
+
+def test_fields_named_default() -> None:
+    class Thing(BaseModel):
+        field1: str
+        field2: str
+        field3: str
+
+        class Config:
+            fieldsets = {"default": ["field1", "field2", "field3"]}
+
+    augment_schema_with_fieldsets(Thing)
+
+    schema = Thing.schema()
+    assert schema
+    assert schema["properties"]
+
+    assert "description" not in schema["properties"]["field1"]
+    assert "description" not in schema["properties"]["field2"]
+    assert "description" not in schema["properties"]["field3"]
+
+
+def test_sub_object() -> None:
+    class SubThing(BaseModel):
+        sfield1: str
+        sfield2: str
+
+        class Config:
+            fieldsets = {
+                "f1": ["sfield1"],
+                "f2": ["sfield1", "sfield2"],
+            }
+
+    class Thing(BaseModel):
+        field1: str
+        field2: SubThing
 
         class Config:
             fieldsets = {"default": ["field1", "field2"]}
 
-    class Response(BaseModel):
-        item: Item
+    augment_schema_with_fieldsets(Thing)
 
-        # Test here is top level response does NOT have a config!
+    schema = Thing.schema()
+    assert schema
+    assert schema["properties"]
 
-    augment_schema_with_fieldsets(Response)
-    item_schema = Item.schema()
+    assert "description" not in schema["properties"]["field1"]
+    assert "description" not in schema["properties"]["field2"]
 
-    assert item_schema
-    assert item_schema["description"]
-
-    assert re.search(
-        r"Default Fields:.* field1, field2",
-        item_schema["description"],
+    assert "SubThing" in schema["definitions"]
+    assert (
+        schema["definitions"]["SubThing"]["properties"]["sfield1"]["description"]
+        == "Included in fieldset(s): f1, f2."
+    )
+    assert (
+        schema["definitions"]["SubThing"]["properties"]["sfield2"]["description"]
+        == "Included in fieldset(s): f2."
     )
 
 
-def test_schema_augment_reponse_nested_description_lists() -> None:
-    class Input(BaseModel):
-        input1: str
-        input2: str
+def test_sub_object_list() -> None:
+    class SubThing(BaseModel):
+        sfield1: str
+        sfield2: str
 
-    class Item(BaseModel):
-        """Regular docstring here"""
+        class Config:
+            fieldsets = {
+                "f1": ["sfield1"],
+                "f2": ["sfield1", "sfield2"],
+            }
 
+    class Thing(BaseModel):
         field1: str
-        field2: str
+        field2: List[SubThing]
 
         class Config:
             fieldsets = {"default": ["field1", "field2"]}
 
-    class Response(BaseModel):
-        item: List[Item]
+    augment_schema_with_fieldsets(Thing)
 
-        # Test here is top level response does NOT have a config!
+    schema = Thing.schema()
+    assert schema
+    assert schema["properties"]
 
-    augment_schema_with_fieldsets(Response)
+    assert "description" not in schema["properties"]["field1"]
+    assert "description" not in schema["properties"]["field2"]
 
-    item_schema = Item.schema()
-
-    assert item_schema
-    assert item_schema["description"]
-    assert re.search(
-        r"Default Fields:.* field1, field2",
-        item_schema["description"],
+    assert "SubThing" in schema["definitions"]
+    assert (
+        schema["definitions"]["SubThing"]["properties"]["sfield1"]["description"]
+        == "Included in fieldset(s): f1, f2."
     )
+    assert (
+        schema["definitions"]["SubThing"]["properties"]["sfield2"]["description"]
+        == "Included in fieldset(s): f2."
+    )
+
+
+def test_expansion_model() -> None:
+    class ExpandedThing(BaseModel):
+        efield1: str
+        efield2: str
+
+        class Config:
+            fieldsets = {
+                "f1": ["efield1", "efield2"],
+                "f2": ["efield2"],
+            }
+
+    class Thing(BaseModel):
+        field1: str
+
+        class Config:
+            fieldsets = {
+                "expando": ModelExpansion(
+                    expansion_method_name="foo",
+                    response_model=ExpandedThing,
+                )
+            }
+
+    augment_schema_with_fieldsets(Thing)
+
+    schema = Thing.schema()
+    assert schema
+    assert schema["properties"]
+
+    assert "expando" in schema["properties"]
+    assert schema["properties"]["expando"] == {
+        "title": "Expando",
+        "description": "Included in fieldset(s): expando.",
+        "$ref": "#/definitions/ExpandedThing",
+    }
+
+    assert "ExpandedThing" in schema["definitions"]
+    assert (
+        schema["definitions"]["ExpandedThing"]["properties"]["efield1"]["description"]
+        == "Included in fieldset(s): f1."
+    )
+    assert (
+        schema["definitions"]["ExpandedThing"]["properties"]["efield2"]["description"]
+        == "Included in fieldset(s): f1, f2."
+    )
+
+
+def test_expansion_model_list() -> None:
+    class ExpandedThing(BaseModel):
+        efield1: str
+        efield2: str
+
+        class Config:
+            fieldsets = {
+                "f1": ["efield1", "efield2"],
+                "f2": ["efield2"],
+            }
+
+    class Thing(BaseModel):
+        field1: str
+
+        class Config:
+            fieldsets = {
+                "expando": ModelExpansion(
+                    expansion_method_name="foo",
+                    response_model=List[ExpandedThing],
+                )
+            }
+
+    augment_schema_with_fieldsets(Thing)
+
+    schema = Thing.schema()
+    assert schema
+    assert schema["properties"]
+
+    assert "expando" in schema["properties"]
+    assert schema["properties"]["expando"] == {
+        "title": "Expando",
+        "description": "Included in fieldset(s): expando.",
+        "type": "array",
+        "items": {
+            "$ref": "#/definitions/ExpandedThing",
+        },
+    }
+
+    assert "ExpandedThing" in schema["definitions"]
+    assert (
+        schema["definitions"]["ExpandedThing"]["properties"]["efield1"]["description"]
+        == "Included in fieldset(s): f1."
+    )
+    assert (
+        schema["definitions"]["ExpandedThing"]["properties"]["efield2"]["description"]
+        == "Included in fieldset(s): f1, f2."
+    )
+
+
+def test_expansion_scalar() -> None:
+    class Thing(BaseModel):
+        field1: str
+
+        class Config:
+            fieldsets = {
+                "expando": ModelExpansion(
+                    expansion_method_name="foo",
+                    response_model=int,
+                )
+            }
+
+    augment_schema_with_fieldsets(Thing)
+
+    schema = Thing.schema()
+    assert schema
+    assert schema["properties"]
+
+    assert "expando" in schema["properties"]
+    assert schema["properties"]["expando"] == {
+        "title": "Expando",
+        "description": "Included in fieldset(s): expando.",
+        "type": "integer",
+    }
+
+
+def test_expansion_scalar_list() -> None:
+    class Thing(BaseModel):
+        field1: str
+
+        class Config:
+            fieldsets = {
+                "expando": ModelExpansion(
+                    expansion_method_name="foo",
+                    response_model=List[int],
+                )
+            }
+
+    augment_schema_with_fieldsets(Thing)
+
+    schema = Thing.schema()
+    assert schema
+    assert schema["properties"]
+
+    assert "expando" in schema["properties"]
+    assert schema["properties"]["expando"] == {
+        "title": "Expando",
+        "description": "Included in fieldset(s): expando.",
+        "type": "array",
+        "items": {
+            "type": "integer",
+        },
+    }

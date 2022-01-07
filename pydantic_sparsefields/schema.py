@@ -1,7 +1,10 @@
+import inspect
+from collections import defaultdict
 from functools import partial
-from typing import Any, Callable, Dict, List, Type, Union
+from typing import Any, Callable, Dict, List, Set, Type, Union, get_args, get_origin
 
 from pydantic import BaseModel
+from pydantic.schema import add_field_type_to_schema, model_schema, normalize_name
 
 from .models import ExpansionBase
 
@@ -25,40 +28,93 @@ def schema_extra(
     model: Type[BaseModel],
 ) -> None:
     fieldsets: dict = getattr(model.__config__, "fieldsets", {})
+    if not fieldsets:
+        return
 
-    fieldset_description_blocks = [
-        "Available fieldsets and expansions for this object:" "",
-    ]
+    fieldsets_per_field: Dict[str, Set[str]] = defaultdict(set)
 
-    if "default" in fieldsets:
-        fields = _fully_list_fieldvalue(fieldsets["default"])
+    for fieldset_name in fieldsets:
+        field_names = set()
 
-        fieldset_description_blocks.append(f"* **Default Fields:** {', '.join(fields)}")
+        if fieldset_name == "default" and "*" in fieldsets[fieldset_name]:
+            field_names.update([f.name for f in model.__fields__.values()])
+            field_names.update(
+                [
+                    name
+                    for name in fieldsets.keys()
+                    if isinstance(fieldsets[fieldset_name], ExpansionBase)
+                ]
+            )
+        elif isinstance(fieldsets[fieldset_name], ExpansionBase):
+            schema["properties"][fieldset_name] = {
+                "title": fieldset_name.title().replace("_", " "),
+            }
 
-    for fieldset in sorted(fieldsets.keys()):
-        if fieldset == "default":
-            continue
-
-        elif isinstance(fieldsets[fieldset], ExpansionBase):
-            response_model = fieldsets[fieldset].response_model
-
-            line = f"* `{fieldset}`: Expansion"
-            if response_model:
-                title = response_model.__config__.title or response_model.__name__
-                line += f" of type {title}"
+            response_model = fieldsets[fieldset_name].response_model
+            if inspect.isclass(response_model) and issubclass(
+                response_model, BaseModel
+            ):
+                model_name = normalize_name(response_model.__name__)
+                schema["properties"][fieldset_name][
+                    "$ref"
+                ] = f"#/definitions/{model_name}"
 
                 augment_schema_with_fieldsets(response_model)
+                if "definitions" not in schema:
+                    schema["definitions"] = {}
+                schema["definitions"][model_name] = model_schema(response_model)
 
-            fieldset_description_blocks.append(line)
+            else:
+                add_field_type_to_schema(
+                    get_origin(response_model) or response_model,
+                    schema["properties"][fieldset_name],
+                )
+
+            if schema["properties"][fieldset_name].get("type") == "array":
+
+                list_models = get_args(response_model)
+                if list_models and issubclass(list_models[0], BaseModel):
+                    model_name = normalize_name(list_models[0].__name__)
+                    schema["properties"][fieldset_name]["items"] = {
+                        "$ref": f"#/definitions/{model_name}"
+                    }
+
+                    augment_schema_with_fieldsets(list_models[0])
+                    if "definitions" not in schema:
+                        schema["definitions"] = {}
+                    schema["definitions"][model_name] = model_schema(list_models[0])
+
+                elif list_models:
+                    # add_field_type_to_schema is not copy-safe on subdicts
+                    schema["properties"][fieldset_name]["items"] = {}
+                    add_field_type_to_schema(
+                        list_models[0], schema["properties"][fieldset_name]["items"]
+                    )
+
+            field_names = {fieldset_name}
 
         else:
-            fields = _fully_list_fieldvalue(fieldsets[fieldset])
-            fieldset_description_blocks.append(f"* `{fieldset}` {', '.join(fields)}")
+            field_names = set(_fully_list_fieldvalue(fieldsets[fieldset_name]))
 
-    if schema.get("description"):
-        schema["description"] += "\n\n" + "\n".join(fieldset_description_blocks)
-    else:
-        schema["description"] = "\n".join(fieldset_description_blocks)
+        for field_name in field_names:
+            fieldsets_per_field[field_name].add(fieldset_name)
+
+    for field_name, fieldset_names in fieldsets_per_field.items():
+        if not fieldset_names:
+            continue
+
+        if "default" in fieldset_names and len(fieldset_names) == 1:
+            continue
+
+        description = (
+            "Included in fieldset(s): "
+            + ", ".join([f for f in sorted(fieldset_names) if f != "default"])
+            + "."
+        )
+
+        schema["properties"][field_name]["description"] = (
+            schema["properties"][field_name].get("description", "") + description
+        )
 
     if callable(original_schema_extra):
         _deep_update(schema, original_schema_extra(schema, model) or {})
