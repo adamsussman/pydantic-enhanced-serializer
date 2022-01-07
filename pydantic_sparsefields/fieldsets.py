@@ -80,6 +80,16 @@ def fieldset_to_includes(
         # no fieldsets set or * in default, enable ALL fields
         fields_request.extend([f.name for f in model.__fields__.values()])
 
+        # and add in all expansions
+        if fieldsets:
+            fields_request.extend(
+                [
+                    name
+                    for name in fieldsets.keys()
+                    if isinstance(fieldsets[name], ExpansionBase)
+                ]
+            )
+
     elif default_fieldset:
         fields_request.extend(default_fieldset)
 
