@@ -7,6 +7,7 @@ from flask import make_response, request
 from pydantic import BaseModel, ValidationError
 
 from pydantic_sparsefields.render import render_fieldset_model
+from pydantic_sparsefields.schema import augment_schema_with_fieldsets
 
 
 def pydantic_api(
@@ -19,6 +20,12 @@ def pydantic_api(
         request_model_param_name, request_model, response_model = _get_annotated_models(
             view_func
         )
+
+        if request_model:
+            augment_schema_with_fieldsets(request_model)
+
+        if response_model:
+            augment_schema_with_fieldsets(response_model)
 
         @wraps(view_func)
         def wrapped_endpoint(*args: Any, **kwargs: Any) -> Callable:
