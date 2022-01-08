@@ -711,3 +711,25 @@ def test_expansion_returns_list_of_list() -> None:
             ],
         },
     )
+
+
+def test_expand_empty_list() -> None:
+    class ResponseModel(BaseModel):
+        f1: str
+
+        def get_sub(self, context: Any) -> List[int]:
+            return []
+
+        class Config:
+            fieldsets = {
+                "default": ["f1"],
+                "sub": ModelExpansion(expansion_method_name="get_sub"),
+            }
+
+    api_response = ResponseModel(f1="f1value")
+
+    assert_expected_rendered_fieldset_data(
+        api_response,
+        ["sub"],
+        {"f1": "f1value", "sub": []},
+    )
