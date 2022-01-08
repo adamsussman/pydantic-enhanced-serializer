@@ -65,6 +65,8 @@ def fieldset_to_includes(
     while isinstance(model, list):
         current_includes_ptr["__all__"] = {}
         current_includes_ptr = current_includes_ptr["__all__"]
+        if len(model) == 0:
+            break
         model = list(model)[0]
 
     if not isinstance(model, BaseModel):
