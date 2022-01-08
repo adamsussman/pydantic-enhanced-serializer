@@ -119,3 +119,34 @@ def test_passthrough_schemas() -> None:
 
     assert response.json["field1"] == "one"
     assert response.json["field2"] == 2
+
+
+def test_fields_in_query_string() -> None:
+    class ResponseModel(BaseModel):
+        field1: str
+        field2: str
+
+        class Config:
+            fieldsets = {
+                "default": ["field1"],
+            }
+
+    app = Flask("test_app")
+
+    @app.get("/")
+    @pydantic_api()
+    def get_response() -> ResponseModel:
+        return ResponseModel(
+            field1="f1",
+            field2="f2",
+        )
+
+    client = app.test_client()
+
+    # make sure input validation is happening
+    response = client.get("/", query_string={"fields": "field2"})
+    assert response.status_code == 200, response.json
+    assert response.json
+
+    assert response.json["field1"] == "f1"
+    assert response.json["field2"] == "f2"

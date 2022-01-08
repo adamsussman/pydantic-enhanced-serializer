@@ -30,7 +30,7 @@ def pydantic_api(
         @wraps(view_func)
         def wrapped_endpoint(*args: Any, **kwargs: Any) -> Callable:
             body = request.json or {}
-            fieldsets = body.pop("fields", [])
+            fieldsets = body.pop("fields", []) or request.args.get("fields", [])
 
             if request_model and request_model_param_name:
                 kwargs[request_model_param_name] = request_model(**body)
