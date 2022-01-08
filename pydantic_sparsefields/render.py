@@ -67,7 +67,7 @@ async def render_expansions(
         if expansion.future:
             expanded_value = await expansion.future
 
-        if expanded_value is None:
+        if not expanded_value:
             if raise_error_on_expansion_not_found:
                 raise Exception(
                     f"Expansion `{'.'.join([str(p) for p in expansion.path])}` not found"
