@@ -651,3 +651,23 @@ def test_default_start() -> None:
     assert_expected_rendered_fieldset_data(
         response, [], {"field1": "one", "field2": "two", "field3": "three"}
     )
+
+
+def test_fieldsets_as_string() -> None:
+    class ResponseModel(BaseModel):
+        field1: str
+        field2: str
+        field3: str
+
+        class Config:
+            fieldsets = {"default": "field1"}
+
+    response = ResponseModel(
+        field1="one",
+        field2="two",
+        field3="three",
+    )
+
+    assert_expected_rendered_fieldset_data(
+        response, "field2,field3", {"field1": "one", "field2": "two", "field3": "three"}
+    )

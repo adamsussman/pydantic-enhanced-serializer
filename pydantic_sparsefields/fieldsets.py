@@ -17,7 +17,7 @@ SEQUENCE_SHAPES = (
 
 
 def fieldset_to_includes(
-    fields_request: List[str],
+    fields_request: Union[str, List[str]],
     model_data: Any,
     path: List[Union[str, int]] = None,
     expansion_context: Any = None,
@@ -57,6 +57,9 @@ def fieldset_to_includes(
 
     if model_data is None:
         return {}, []
+
+    if isinstance(fields_request, str):
+        fields_request = fields_request.split(",")
 
     model = model_data
     while isinstance(model, list):

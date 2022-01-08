@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -8,7 +8,7 @@ from pydantic_sparsefields.render import render_fieldset_model
 
 def assert_expected_rendered_fieldset_data(
     model_instance: BaseModel,
-    fields: List[str],
+    fields: Union[str, List[str]],
     expected: dict,
     expansion_context: Optional[Any] = None,
 ) -> None:

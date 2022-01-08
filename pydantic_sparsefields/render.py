@@ -1,6 +1,6 @@
 from asyncio import gather
 from copy import copy
-from typing import Any, List
+from typing import Any, List, Union
 
 from pydantic import BaseModel
 
@@ -11,7 +11,7 @@ from .path_put import path_put
 
 async def render_fieldset_model(
     model: BaseModel,
-    fieldsets: List[str],
+    fieldsets: Union[str, List[str]],
     maximum_expansion_depth: int = 5,
     raise_error_on_expansion_not_found: bool = False,
     expansion_context: Any = None,
