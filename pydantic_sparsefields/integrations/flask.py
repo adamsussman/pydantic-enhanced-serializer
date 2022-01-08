@@ -15,6 +15,7 @@ def pydantic_api(
     tags: List[str] = None,
     success_status_code: int = 200,
     maximum_expansion_depth=5,
+    request_fields_name: str = "fields",
 ) -> Callable:
     def wrap(view_func: Callable) -> Callable:
         request_model_param_name, request_model, response_model = _get_annotated_models(
@@ -30,7 +31,9 @@ def pydantic_api(
         @wraps(view_func)
         def wrapped_endpoint(*args: Any, **kwargs: Any) -> Callable:
             body = request.json or {}
-            fieldsets = body.pop("fields", []) or request.args.get("fields", [])
+            fieldsets = body.pop(request_fields_name, []) or request.args.get(
+                request_fields_name, []
+            )
 
             if request_model and request_model_param_name:
                 kwargs[request_model_param_name] = request_model(**body)
