@@ -73,7 +73,11 @@ def schema_extra(
             if schema["properties"][fieldset_name].get("type") == "array":
 
                 list_models = get_args(response_model)
-                if list_models and issubclass(list_models[0], BaseModel):
+                if (
+                    list_models
+                    and inspect.isclass(list_models[0])
+                    and issubclass(list_models[0], BaseModel)
+                ):
                     model_name = normalize_name(list_models[0].__name__)
                     schema["properties"][fieldset_name]["items"] = {
                         "$ref": f"#/definitions/{model_name}"
@@ -133,7 +137,7 @@ def augment_schema_with_fieldsets(model: Type[BaseModel]) -> None:
 
     for field_obj in model.__fields__.values():
         # descend subfields
-        if issubclass(field_obj.type_, BaseModel):
+        if inspect.isclass(field_obj.type_) and issubclass(field_obj.type_, BaseModel):
             augment_schema_with_fieldsets(field_obj.type_)
 
     if getattr(model.__config__, "fieldsets", None) is None:
