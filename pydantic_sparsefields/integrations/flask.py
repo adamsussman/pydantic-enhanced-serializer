@@ -5,6 +5,7 @@ from typing import Any, Callable, List, Optional, Tuple, Type
 from asgiref.sync import async_to_sync
 from flask import make_response, request
 from pydantic import BaseModel, ValidationError
+from werkzeug.exceptions import BadRequest
 
 from pydantic_sparsefields.render import render_fieldset_model
 from pydantic_sparsefields.schema import augment_schema_with_fieldsets
@@ -30,13 +31,18 @@ def pydantic_api(
 
         @wraps(view_func)
         def wrapped_endpoint(*args: Any, **kwargs: Any) -> Callable:
-            body = request.json or {}
-            fieldsets = body.pop(request_fields_name, []) or request.args.get(
-                request_fields_name, []
-            )
+            body = None
+            try:
+                body = request.json
+            except BadRequest:
+                pass
+
+            fieldsets = (
+                isinstance(body, dict) and body.pop(request_fields_name, [])
+            ) or request.args.get(request_fields_name, [])
 
             if request_model and request_model_param_name:
-                kwargs[request_model_param_name] = request_model(**body)
+                kwargs[request_model_param_name] = request_model(**body or {})
 
             if asyncio.iscoroutine(view_func):
                 result = async_to_sync(view_func)(*args, **kwargs)
