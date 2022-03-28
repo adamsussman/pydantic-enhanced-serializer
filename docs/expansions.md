@@ -200,7 +200,7 @@ class User(BaseModel):
 # The batch loader function.  The DataLoader will aggregate as many individual
 # loads as it can into one single call to this function.  This is the place to
 # create load efficiency.
-def batch_load_users(user_ids: list[int]) -> list[user]:
+async def batch_load_users(user_ids: list[int]) -> list[user]:
     user_db_objects = my_database_session.execute(
         select(UserORMModel).where(UserORMModel.user_id.in_=user_ids)
     )
@@ -221,7 +221,7 @@ def batch_load_users(user_ids: list[int]) -> list[user]:
 # your event loop is running inside of.  For web applications, this
 # should probably be scoped to the request object itself.
 #
-user_data_loader = DataLoader(batch_load_fb=batch_load_users)
+user_data_loader = DataLoader(batch_load_fn=batch_load_users)
 
 
 # Define the expansion on the "parent" model:
