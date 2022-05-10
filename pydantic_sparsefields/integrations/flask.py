@@ -32,10 +32,8 @@ def pydantic_api(
         @wraps(view_func)
         def wrapped_endpoint(*args: Any, **kwargs: Any) -> Callable:
             body = None
-            try:
+            if request.is_json:
                 body = request.json
-            except BadRequest:
-                pass
 
             fieldsets = (
                 isinstance(body, dict) and body.pop(request_fields_name, [])
