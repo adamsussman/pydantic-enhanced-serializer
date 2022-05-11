@@ -1,7 +1,18 @@
 import inspect
 from collections import defaultdict
 from functools import partial
-from typing import Any, Callable, Dict, List, Set, Type, Union, get_args, get_origin
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+)
 
 from pydantic import BaseModel
 from pydantic.schema import add_field_type_to_schema, model_schema, normalize_name
@@ -20,6 +31,22 @@ def _fully_list_fieldvalue(value: Union[str, List[str]]) -> List[str]:
             fields.extend(fieldspec.split(","))
 
     return sorted(list(set(fields)))
+
+
+def is_optional(type_: Any) -> bool:
+    return (
+        get_origin(type_) is Union
+        and len(get_args(type_)) == 2
+        and type(None) in get_args(type_)
+    )
+
+
+def get_optional_type(type_: Any) -> Optional[Type]:
+    for arg in get_args(type_):
+        if arg is not None:
+            return arg
+
+    return None
 
 
 def schema_extra(
@@ -51,6 +78,9 @@ def schema_extra(
             }
 
             response_model = fieldsets[fieldset_name].response_model
+            if is_optional(response_model):
+                response_model = get_optional_type(response_model)
+
             if inspect.isclass(response_model) and issubclass(
                 response_model, BaseModel
             ):

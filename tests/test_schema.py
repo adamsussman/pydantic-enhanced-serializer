@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -331,4 +331,32 @@ def test_expansion_scalar_list() -> None:
         "items": {
             "type": "integer",
         },
+    }
+
+
+def test_optional_expansion_response_model() -> None:
+    class Expanded(BaseModel):
+        efield1: str
+
+    class Thing(BaseModel):
+        field1: str
+
+        class Config:
+            fieldsets = {
+                "expando": ModelExpansion(
+                    expansion_method_name="foo", response_model=Optional[Expanded]
+                )
+            }
+
+    augment_schema_with_fieldsets(Thing)
+    schema = Thing.schema()
+
+    assert schema
+    assert schema["properties"]
+
+    assert "expando" in schema["properties"]
+    assert schema["properties"]["expando"] == {
+        "title": "Expando",
+        "description": "Included in fieldset(s): expando.",
+        "$ref": "#/definitions/Expanded",
     }
