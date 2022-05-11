@@ -81,3 +81,6 @@ class ExpansionInstruction(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+    def __hash__(self) -> int:
+        return sum([hash(str(p)) for p in self.path] + [hash(self.expansion_name)])
