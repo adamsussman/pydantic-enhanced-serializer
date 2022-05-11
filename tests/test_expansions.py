@@ -733,3 +733,83 @@ def test_expand_empty_list() -> None:
         ["sub"],
         {"f1": "f1value", "sub": []},
     )
+
+
+def test_expansion_in_default_fieldset() -> None:
+    class SubModelBase(BaseModel):
+        f1: str
+
+    class SubModel(SubModelBase):
+        f2: str
+        f3: str
+        f4: str
+        f5: str
+        f6: str
+        f7: str
+
+        def get_sub(self, context: Any) -> str:
+            return "sub" + self.f1
+
+        class Config:
+            orm_mode = True
+            fieldsets = {
+                "default": ["f1", "f2", "sub"],
+                "g1": ["f3"],
+                "g2": ["f4", "f5"],
+                "sub": ModelExpansion(expansion_method_name="get_sub"),
+            }
+
+    class ResponseModel(BaseModel):
+        subs: List[SubModel]
+
+    response = ResponseModel(
+        subs=[
+            SubModel(
+                f1="f1.1",
+                f2="f1.2",
+                f3="f1.3",
+                f4="f1.4",
+                f5="f1.5",
+                f6="f1.6",
+                f7="f1.7",
+            ),
+            SubModel(
+                f1="f2.1",
+                f2="f2.2",
+                f3="f2.3",
+                f4="f2.4",
+                f5="f2.5",
+                f6="f2.6",
+                f7="f2.7",
+            ),
+        ]
+    )
+
+    assert_expected_rendered_fieldset_data(
+        response,
+        ["subs.g1", "subs.g2", "subs.sub", "subs.f6", "subs.f7"],
+        {
+            "subs": [
+                {
+                    "f1": "f1.1",
+                    "f2": "f1.2",
+                    "f3": "f1.3",
+                    "f4": "f1.4",
+                    "f5": "f1.5",
+                    "f6": "f1.6",
+                    "f7": "f1.7",
+                    "sub": "subf1.1",
+                },
+                {
+                    "f1": "f2.1",
+                    "f2": "f2.2",
+                    "f3": "f2.3",
+                    "f4": "f2.4",
+                    "f5": "f2.5",
+                    "f6": "f2.6",
+                    "f7": "f2.7",
+                    "sub": "subf2.1",
+                },
+            ]
+        },
+    )

@@ -176,7 +176,7 @@ def fieldset_to_includes(
         elif named_fieldset := getattr(model.__config__, "fieldsets", {}).get(field):
             # Fieldset collection by name
             sub_includes, sub_expansions = fieldset_to_includes(
-                named_fieldset, model, path + [field]
+                named_fieldset, model, path
             )
             current_includes_ptr.update(sub_includes)
             expansions.update(sub_expansions)
