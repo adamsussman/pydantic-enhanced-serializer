@@ -5,7 +5,6 @@ from typing import Any, Callable, List, Optional, Tuple, Type
 from asgiref.sync import async_to_sync
 from flask import make_response, request
 from pydantic import BaseModel, ValidationError
-from werkzeug.exceptions import BadRequest
 
 from pydantic_sparsefields.render import render_fieldset_model
 from pydantic_sparsefields.schema import augment_schema_with_fieldsets
