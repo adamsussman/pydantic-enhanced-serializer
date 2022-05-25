@@ -57,6 +57,12 @@ def path_put(data: Any, path: Union[PATH_TYPE, str], value: Any) -> Any:
     >>> path_put({"aa": "bb", "subthing": {"s1": "v1"}}, "subthing", {"s2": "v2"})
     {'aa': 'bb', 'subthing': {'s1': 'v1', 's2': 'v2'}}
 
+    >>> path_put({"things": [{"s1": "v1"}]}, "things.0", {"s2": "v2"})
+    {'things': [{'s1': 'v1', 's2': 'v2'}]}
+
+    >>> path_put({"things": [{"s1": "v1", "sub": {"ss1": "sv1"}}]}, "things.0.sub", {"ss2": "sv2"})
+    {'things': [{'s1': 'v1', 'sub': {'ss1': 'sv1', 'ss2': 'sv2'}}]}
+
     """
     if data is None:
         return value
