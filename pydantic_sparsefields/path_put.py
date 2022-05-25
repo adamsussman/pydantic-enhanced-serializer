@@ -54,6 +54,9 @@ def path_put(data: Any, path: Union[PATH_TYPE, str], value: Any) -> Any:
     >>> path_put({"aa": "bb"}, "", {"foo": "bar"})
     {'aa': 'bb', 'foo': 'bar'}
 
+    >>> path_put({"aa": "bb", "subthing": {"s1": "v1"}}, "subthing", {"s2": "v2"})
+    {'aa': 'bb', 'subthing': {'s1': 'v1', 's2': 'v2'}}
+
     """
     if data is None:
         return value
@@ -81,17 +84,24 @@ def path_put(data: Any, path: Union[PATH_TYPE, str], value: Any) -> Any:
 
 
 def _path_put_dict(data: Dict, path: PATH_TYPE, value: Any) -> None:
-    if not path and isinstance(value, dict):
-        data.update(value)
-        return
-
-    if len(path) == 1:
-        data[path[0]] = value
+    if not path:
+        if isinstance(value, dict):
+            data.update(value)
         return
 
     path0 = path.pop(0)
+    if not path:
+        if path0 in data and isinstance(value, dict):
+            data[path0].update(value)
+        else:
+            data[path0] = value
+        return
+
     if path0 not in data:
-        data[path0] = [] if isinstance(path[0], int) or path[0].isnumeric() else {}
+        if path and (isinstance(path[0], int) or path[0].isnumeric()):
+            data[path0] = []
+        else:
+            data[path0] = {}
 
     path_put(data[path0], path, value)
 
