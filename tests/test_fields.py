@@ -671,3 +671,63 @@ def test_fieldsets_as_string() -> None:
     assert_expected_rendered_fieldset_data(
         response, "field2,field3", {"field1": "one", "field2": "two", "field3": "three"}
     )
+
+
+def test_fieldset_that_references_itself() -> None:
+    class Thing(BaseModel):
+        field1: str
+        field2: str
+
+        class Config:
+            fieldsets = {
+                "default": ["field1"],
+                "field2": ["field2"],
+            }
+
+    class ResponseModel(BaseModel):
+        things: List[Thing]
+
+    response = ResponseModel(
+        things=[
+            Thing(
+                field1="one",
+                field2="two",
+            )
+        ]
+    )
+
+    assert_expected_rendered_fieldset_data(
+        response,
+        "things.other,things.field2,things.field5",
+        {"things": [{"field1": "one", "field2": "two"}]},
+    )
+
+
+def test_fieldset_that_references_itself_but_does_not_exist_as_a_field() -> None:
+    class Thing(BaseModel):
+        field1: str
+        field2: str
+
+        class Config:
+            fieldsets = {
+                "default": ["field1"],
+                "does_not_exist": ["does_not_exist", "field2"],
+            }
+
+    class ResponseModel(BaseModel):
+        things: List[Thing]
+
+    response = ResponseModel(
+        things=[
+            Thing(
+                field1="one",
+                field2="two",
+            )
+        ]
+    )
+
+    assert_expected_rendered_fieldset_data(
+        response,
+        "things.does_not_exist",
+        {"things": [{"field1": "one", "field2": "two"}]},
+    )

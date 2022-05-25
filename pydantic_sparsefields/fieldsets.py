@@ -175,6 +175,20 @@ def fieldset_to_includes(
 
         elif named_fieldset := getattr(model.__config__, "fieldsets", {}).get(field):
             # Fieldset collection by name
+
+            # reference to field of same name that does not exist leads to infinite recursion
+            named_fieldset = [
+                fieldset_field
+                for fieldset_field in named_fieldset
+                if (
+                    model.__fields__.get(fieldset_field)
+                    or (
+                        fieldsets
+                        and fieldsets.get(fieldset_field)
+                        and field != fieldset_field
+                    )
+                )
+            ]
             sub_includes, sub_expansions = fieldset_to_includes(
                 named_fieldset, model, path
             )
