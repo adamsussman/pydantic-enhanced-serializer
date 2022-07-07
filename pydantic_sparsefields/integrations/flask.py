@@ -46,22 +46,25 @@ def pydantic_api(
             else:
                 result = view_func(*args, **kwargs)
 
-            if response_model and isinstance(result, dict):
-                try:
+            try:
+                if response_model and isinstance(result, dict):
                     result = response_model(**result)
-                except ValidationError:
-                    # we don't want the end client to see these errors, just
-                    # the local log
-                    raise
 
-            if isinstance(result, BaseModel):
-                result_data = async_to_sync(render_fieldset_model)(
-                    model=result,
-                    fieldsets=fieldsets,
-                    maximum_expansion_depth=maximum_expansion_depth,
-                    raise_error_on_expansion_not_found=False,
+                if isinstance(result, BaseModel):
+                    result_data = async_to_sync(render_fieldset_model)(
+                        model=result,
+                        fieldsets=fieldsets,
+                        maximum_expansion_depth=maximum_expansion_depth,
+                        raise_error_on_expansion_not_found=False,
+                    )
+
+                    result = make_response(result_data, success_status_code)
+            except ValidationError as e:
+                raise Exception(
+                    "pydantic model error on api response serialization; "
+                    f"endpoint: {request.endpoint}; "
+                    f"error: {str(e)}"
                 )
-                result = make_response(result_data, success_status_code)
 
             return result
 
