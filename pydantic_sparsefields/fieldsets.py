@@ -15,6 +15,11 @@ SEQUENCE_SHAPES = (
     fields.SHAPE_ITERABLE,
 )
 
+MAPPING_SHAPES = {
+    fields.SHAPE_DICT,
+    fields.SHAPE_DEFAULTDICT,
+}
+
 
 def fieldset_to_includes(
     fields_request: Union[str, Set[str], List[str]],
@@ -55,6 +60,8 @@ def fieldset_to_includes(
     expansions: Set[ExpansionInstruction] = set()
     expansion_fieldsets: Dict[str, Set[str]] = defaultdict(set)
 
+    subfields: Set[str]
+
     if model_data is None:
         return {}, set()
 
@@ -65,12 +72,34 @@ def fieldset_to_includes(
         fields_request = set(fields_request)
 
     model = model_data
-    while isinstance(model, list):
+    if isinstance(model, list):
         current_includes_ptr["__all__"] = {}
         current_includes_ptr = current_includes_ptr["__all__"]
-        if len(model) == 0:
-            break
-        model = list(model)[0]
+
+        for idx, submodel in enumerate(model):
+            sub_includes, sub_expansions = fieldset_to_includes(
+                fields_request, submodel, path + [idx] if path else [idx]
+            )
+
+            # If nothing under submodels is a base model, we need to add an
+            # extra "__all__" for pydantic to pick up all the non-model data
+            current_includes_ptr.update(sub_includes or {"__all__": {}})
+            expansions.update(sub_expansions)
+
+        return {k: v for k, v in includes.items() if v is not None}, expansions
+
+    if isinstance(model, dict):
+        subfields = set([f.split(".", 1)[-1] for f in fields_request])
+
+        for key, value in model.items():
+            sub_includes, sub_expansions = fieldset_to_includes(
+                subfields, value, path + [key] if path else [key]
+            )
+
+            current_includes_ptr[key] = sub_includes
+            expansions.update(sub_expansions)
+
+        return {k: v for k, v in includes.items() if v is not None}, expansions
 
     if not isinstance(model, BaseModel):
         return {}, set()
@@ -109,7 +138,6 @@ def fieldset_to_includes(
             continue
 
         field: str
-        subfields: Set[str]
 
         try:
             field, subfield = fieldset.split(".", 1)
@@ -121,36 +149,47 @@ def fieldset_to_includes(
         field_obj = model.__fields__.get(field)
 
         if field_obj:
-            if issubclass(field_obj.type_, BaseModel):
-                if field_obj.shape in SEQUENCE_SHAPES:
-                    # Field value is a list of models
-                    if field not in current_includes_ptr:
-                        current_includes_ptr[field] = defaultdict(dict)
+            if field_obj.shape in SEQUENCE_SHAPES:
+                # Field value is a list of models
+                if field not in current_includes_ptr:
+                    current_includes_ptr[field] = defaultdict(dict)
 
-                    # while this could be done abstractly on the model class
-                    # and using __all__, we need to examine each item for its
-                    # own expansions
-                    for idx, item in enumerate(getattr(model, field_obj.name)):
-                        sub_includes, sub_expansions = fieldset_to_includes(
-                            subfields, item, path + [field, idx]
-                        )
-
-                        current_includes_ptr[field][idx].update(sub_includes)
-                        expansions.update(sub_expansions)
-                else:
-                    # Field is a single model
-                    if field not in current_includes_ptr:
-                        current_includes_ptr[field] = {}
-
+                # while this could be done abstractly on the model class
+                # and using __all__, we need to examine each item for its
+                # own expansions
+                for idx, item in enumerate(getattr(model, field_obj.name)):
                     sub_includes, sub_expansions = fieldset_to_includes(
-                        subfields, getattr(model, field_obj.name), path + [field]
+                        subfields, item, path + [field, idx]
                     )
 
-                    current_includes_ptr[field].update(sub_includes)
+                    current_includes_ptr[field][idx].update(sub_includes)
+                    expansions.update(sub_expansions)
+
+            elif field_obj.shape in MAPPING_SHAPES:
+                # Field is a dict, values may or may not contain models
+                # or nested dicts/lists of models
+                if field not in current_includes_ptr:
+                    current_includes_ptr[field] = {}
+
+                for key, value in getattr(model, field_obj.name).items():
+                    sub_includes, sub_expansions = fieldset_to_includes(
+                        subfields, value, path + [field, key]
+                    )
+
+                    current_includes_ptr[field][key] = sub_includes
                     expansions.update(sub_expansions)
 
             else:
-                current_includes_ptr[field] = ...
+                # Field is a single model
+                if field not in current_includes_ptr:
+                    current_includes_ptr[field] = {}
+
+                sub_includes, sub_expansions = fieldset_to_includes(
+                    subfields, getattr(model, field_obj.name), path + [field]
+                )
+
+                current_includes_ptr[field].update(sub_includes)
+                expansions.update(sub_expansions)
 
         elif (
             expansion := getattr(model.__config__, "fieldsets", {}).get(field)

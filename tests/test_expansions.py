@@ -609,9 +609,9 @@ def test_expansion_returns_list_nested() -> None:
 
         def get_subsub(self, context: Any) -> List[SubExpandedModel]:
             return [
-                SubExpandedModel(subfield1="subfield1value1"),
-                SubExpandedModel(subfield1="subfield1value2"),
-                SubExpandedModel(subfield1="subfield1value3"),
+                SubExpandedModel(subfield1=f"{self.field1}_subvalue1"),
+                SubExpandedModel(subfield1=f"{self.field1}_subvalue2"),
+                SubExpandedModel(subfield1=f"{self.field1}_subvalue3"),
             ]
 
         class Config:
@@ -647,25 +647,25 @@ def test_expansion_returns_list_nested() -> None:
                 {
                     "field1": "field1value1",
                     "subsub": [
-                        {"subfield1": "subfield1value1"},
-                        {"subfield1": "subfield1value2"},
-                        {"subfield1": "subfield1value3"},
+                        {"subfield1": "field1value1_subvalue1"},
+                        {"subfield1": "field1value1_subvalue2"},
+                        {"subfield1": "field1value1_subvalue3"},
                     ],
                 },
                 {
                     "field1": "field1value2",
                     "subsub": [
-                        {"subfield1": "subfield1value1"},
-                        {"subfield1": "subfield1value2"},
-                        {"subfield1": "subfield1value3"},
+                        {"subfield1": "field1value2_subvalue1"},
+                        {"subfield1": "field1value2_subvalue2"},
+                        {"subfield1": "field1value2_subvalue3"},
                     ],
                 },
                 {
                     "field1": "field1value3",
                     "subsub": [
-                        {"subfield1": "subfield1value1"},
-                        {"subfield1": "subfield1value2"},
-                        {"subfield1": "subfield1value3"},
+                        {"subfield1": "field1value3_subvalue1"},
+                        {"subfield1": "field1value3_subvalue2"},
+                        {"subfield1": "field1value3_subvalue3"},
                     ],
                 },
             ],

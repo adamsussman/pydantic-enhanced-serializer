@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pytest
 from pydantic import BaseModel
@@ -730,4 +730,198 @@ def test_fieldset_that_references_itself_but_does_not_exist_as_a_field() -> None
         response,
         "things.does_not_exist",
         {"things": [{"field1": "one", "field2": "two"}]},
+    )
+
+
+def test_fieldsets_dict() -> None:
+    class Thing(BaseModel):
+        str1: str
+        str2: str
+
+        class Config:
+            fieldsets = {
+                "default": ["str1"],
+            }
+
+    class Container(BaseModel):
+        things: Dict[str, Thing]
+
+    container = Container(
+        things={
+            "cat1": Thing(str1="c1t1str1val", str2="c1t1str2val"),
+            "cat2": Thing(str1="c2t1str1val", str2="c2t1str2val"),
+        }
+    )
+
+    assert_expected_rendered_fieldset_data(
+        container,
+        "things.str1",
+        {
+            "things": {
+                "cat1": {"str1": "c1t1str1val"},
+                "cat2": {"str1": "c2t1str1val"},
+            }
+        },
+    )
+
+
+def test_fieldsets_dict_non_model_value() -> None:
+    class Container(BaseModel):
+        things: Dict[str, str]
+
+    container = Container(
+        things={
+            "cat1": "boo",
+            "cat2": "lal",
+        }
+    )
+
+    assert_expected_rendered_fieldset_data(
+        container,
+        "things.str1",
+        {
+            "things": {
+                "cat1": "boo",
+                "cat2": "lal",
+            }
+        },
+    )
+
+
+def test_fieldsets_dict_list() -> None:
+    class Thing(BaseModel):
+        str1: str
+        str2: str
+
+        class Config:
+            fieldsets = {
+                "default": ["str1"],
+            }
+
+    class Container(BaseModel):
+        things: Dict[str, List[Thing]]
+
+    container = Container(
+        things={
+            "cat1": [
+                Thing(str1="c1t1str1val", str2="c1t1str2val"),
+                Thing(str1="c1t2str1val", str2="c1t2str2val"),
+            ],
+            "cat2": [
+                Thing(str1="c2t1str1val", str2="c2t1str2val"),
+            ],
+        }
+    )
+
+    assert_expected_rendered_fieldset_data(
+        container,
+        "things.str1",
+        {
+            "things": {
+                "cat1": [
+                    {"str1": "c1t1str1val"},
+                    {"str1": "c1t2str1val"},
+                ],
+                "cat2": [
+                    {"str1": "c2t1str1val"},
+                ],
+            }
+        },
+    )
+
+
+def test_fieldsets_dict_list_non_model_value() -> None:
+    class Container(BaseModel):
+        things: Dict[str, List[str]]
+
+    container = Container(
+        things={
+            "cat1": ["boo", "bar", "baz"],
+            "cat2": ["lal", "whatever"],
+        }
+    )
+
+    assert_expected_rendered_fieldset_data(
+        container,
+        "things.str1",
+        {
+            "things": {
+                "cat1": ["boo", "bar", "baz"],
+                "cat2": ["lal", "whatever"],
+            }
+        },
+    )
+
+
+def test_fieldsets_dict_dict() -> None:
+    class Thing(BaseModel):
+        str1: str
+        str2: str
+
+        class Config:
+            fieldsets = {
+                "default": ["str1"],
+            }
+
+    class Container(BaseModel):
+        things: Dict[str, Dict[str, Thing]]
+
+    container = Container(
+        things={
+            "cat1": {"nest1": Thing(str1="c1t1str1val", str2="c1t1str2val")},
+            "cat2": {"nest2": Thing(str1="c2t1str1val", str2="c2t1str2val")},
+        }
+    )
+
+    assert_expected_rendered_fieldset_data(
+        container,
+        "things.str1",
+        {
+            "things": {
+                "cat1": {"nest1": {"str1": "c1t1str1val"}},
+                "cat2": {"nest2": {"str1": "c2t1str1val"}},
+            }
+        },
+    )
+
+
+def test_fieldsets_dict_list_dict() -> None:
+    class Thing(BaseModel):
+        str1: str
+        str2: str
+
+        class Config:
+            fieldsets = {
+                "default": ["str1"],
+            }
+
+    class Container(BaseModel):
+        things: Dict[str, List[Dict[str, Thing]]]
+
+    container = Container(
+        things={
+            "cat1": [
+                {"nest1": Thing(str1="c1t1str1val", str2="c1t1str2val")},
+                {"nest2": Thing(str1="c1t2str1val", str2="c1t2str2val")},
+            ],
+            "cat2": [
+                {"nest3": Thing(str1="c3t1str1val", str2="c3t1str2val")},
+            ],
+        }
+    )
+
+    assert_expected_rendered_fieldset_data(
+        container,
+        "things.str1",
+        {
+            "things": {
+                "cat1": [
+                    {"nest1": {"str1": "c1t1str1val"}},
+                    {"nest2": {"str1": "c1t2str1val"}},
+                ],
+                "cat2": [
+                    {"nest3": {"str1": "c3t1str1val"}},
+                ],
+            }
+        },
     )
