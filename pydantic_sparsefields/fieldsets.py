@@ -157,7 +157,7 @@ def fieldset_to_includes(
                 # while this could be done abstractly on the model class
                 # and using __all__, we need to examine each item for its
                 # own expansions
-                for idx, item in enumerate(getattr(model, field_obj.name)):
+                for idx, item in enumerate(getattr(model, field_obj.name) or []):
                     sub_includes, sub_expansions = fieldset_to_includes(
                         subfields, item, path + [field, idx]
                     )
