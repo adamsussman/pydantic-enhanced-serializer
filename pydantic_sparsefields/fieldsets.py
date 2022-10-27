@@ -37,7 +37,7 @@ def fieldset_to_includes(
         - fields_request: Set of strings, each string is a field or fieldset name.  For nested
                      objects, names should be dot seperated: `top.submodel.subfield`.
 
-        - model: A pydantic model, the top of the object tree that `fields_request` is
+        - model: A pydantic model INSTANCE, the top of the object tree that `fields_request` is
                  inteded to match
 
     :returns:
