@@ -207,13 +207,16 @@ async def batch_load_users(user_ids: list[int]) -> list[user]:
 
     # Note that the aiodataloader will wrap this in a future for us although
     # we could also return a coroutine from here.
-
+    #
     # The final product here needs to be pydantic Models and not SQLAlchemy models.
+    #
+    # IMPORTANT: The ordering of objects in the return list MUST match the ordering
+    # of the `user_ids` parameter.
     return list([User.from_orm(row.UserORMModel) for row in user_db_objects.all()])
 
 # Note: Consolidating multiple `load` calls into one database fetch with
 # aiodataloader requires insuring that all of the dataloader calls
-# occur within the same event loop, otherwise you will get errors
+# occur within the same asyncio event loop, otherwise you will get errors
 # about events in different loops.
 #
 # Although this example uses a global data loader, in a real world
@@ -286,3 +289,42 @@ expansions are not known until the first expansions are complete.
 Allowing this to arbitrary depth may be a performance issue.  Use
 the `maximum_expansion_depth` parameter to set limits on this
 behavior.
+
+
+<a name="asyncwarning"></a>
+## Warning: Asyncio vs database connection handlers
+
+When you have database connections stuck at "Idle in transaction".
+
+If you are using awaitables in your expansions to make database
+queries and you are using a framework that is NOT asyncio native
+(Flask, Django, etc), you may run into issues with the database
+handles used by the expansion not being cleaned up after requests.
+
+The reason for this is that database frameworks such as Django and
+SQLAlchemy make everything a transaction by default.  Even if all you
+are doing is a select, the framework will still begin a transaction to
+do it.
+
+Normally, web frameworks have a post request handler/middleware that
+terminates any open transactions for you and you never need to think
+
+While Django and Flask do support async request handlers, this is
+done on demand and therefore it can be the case that the database
+connection handles this module's expansion handler uses wind up in
+a different event loop that the ones the framework is managing.
+This means that the post request cleanup code that cleans up open
+transactions may not be able to see the database connections you
+used in the expansion code and you may therefore accumulate connections
+with unfinished transactions.
+
+There are several possible ways to deal with this problem, depending
+on your setup and integration:
+
+1. The easiest way is to just put a `dbhandle.commit()` at the end of
+your `expand` methods; even if all you are doing is a select.
+
+2. Try to ensure that an event loop exists before you ever connect
+to a database (ie at process startup).  Flask, for example, does not
+create an event loop at all unless you mark your request handler async
+and even then, it may already be too late.
