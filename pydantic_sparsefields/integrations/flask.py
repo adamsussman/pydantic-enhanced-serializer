@@ -10,6 +10,8 @@ from pydantic_sparsefields.render import render_fieldset_model
 from pydantic_sparsefields.schema import augment_schema_with_fieldsets
 
 
+# decorator that can be composed with regular Flask @blueprint.get/post/etc decorators.
+# This decorator uses type signatures to figure out the request and response pydantic models.
 def pydantic_api(
     name: str = None,
     tags: List[str] = None,
