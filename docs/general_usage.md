@@ -154,39 +154,13 @@ behave like a default pydantic model when `model.dict()` is called:
 ALL fields will be returned regardless of the contents of the
 `fieldsets` parameter.
 
-### 2. Field by Name
-
-If `fieldsets` parameter path contains the name of a defined
-field of the model, it will be present in the response.
-
-In the above example, `field5` will never be returned unless it is
-specifically asked for in `fieldsets`.
-
-```Python
-fieldsets=["field5"]
-```
-
-### 3. Field by Named Set/Collection
-
-If the `fieldsets` request path contains a value that is present
-as a key in `Config.fieldsets` and which isn't an actual field name,
-then the value of that key lists the field names that will be returned.
-
-```Python
-fieldsets=["extra_stuff"]
-```
-
-returns:
-
-```json
-{"field3": "value3", "field4": "value5"}
-```
-
-### 4. Default Set/Collection
+### 2. Default Set/Collection
 
 If `Config.fieldsets` contains a `default` definition, then the
 fields listed in the value will ALWAYS be returned, no matter what
 else the client does or does not ask for in the `fieldsets` parameter.
+If no other fields are requested then ONLY the default fields will be
+returned.
 
 ```json
 fieldsets=[]
@@ -234,6 +208,35 @@ class MyModel(BaseModel):
         fieldsets = {
             "default": ["*"],
         }
+```
+
+
+### 3. Field by Name
+
+If `fieldsets` parameter path contains the name of a defined
+field of the model, it will be present in the response.
+
+In the above example, `field5` will never be returned unless it is
+specifically asked for in `fieldsets`.
+
+```Python
+fieldsets=["field5"]
+```
+
+### 4. Field by Named Set/Collection
+
+If the `fieldsets` request path contains a value that is present
+as a key in `Config.fieldsets` and which isn't an actual field name,
+then the value of that key lists the field names that will be returned.
+
+```Python
+fieldsets=["extra_stuff"]
+```
+
+returns:
+
+```json
+{"field3": "value3", "field4": "value5"}
 ```
 
 ### 5. Nested objects all the way down
