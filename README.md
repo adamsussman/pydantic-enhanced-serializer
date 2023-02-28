@@ -1,27 +1,40 @@
-# Pydantic Sparse Fields and Expansions
 
-Allow serialization of pydantic models (model.dict()) to include
-only specified wanted fields instead of all fields.
+# Better pydantic serialization for API use cases
 
-Allow serializtion of pydantic models to expand fields into
-full models with complex logic, such as database queries.
+Enhance pydantic's output serialization with features that can help make better APIs:
 
-Both features are useful if you are using pydantic models to
-drive REST APIs (ie: FastAPI) and you want to emulate the
-field/expansion request model of GraphQL or other sophisticated
-APIs.
+1) Output only fields and sets of fields requested by the caller, instead of all fields.
+
+For example:
+
+**api caller**: Give me a User object with only the email and id fields.
+
+**api response**: Ok, instead of the usual 20 User fields, here is the object with only two.
+
+2) Expand field values into more complex objects when requested
+
+**api caller**: Give me 10 Blog objects AND the User Objects that created them in ONE API response.
+
+**api response**: Ok, in addition to Blog.user_id, I will also give you Blog.User and its fields.
+
+
+Both features are useful if you are using pydantic models to drive
+REST APIs (ie: FastAPI) and you want to emulate the field/expansion
+request model of GraphQL or other sophisticated APIs.
 
 ## Features
 
-* "Fields" Request: When serializing a model, specify which fields you want and get ONLY those fields
+* Simply formatted "Fields" Request: When serializing a model, specify which fields you want and get ONLY those fields
 * "Field Sets": Ask for specific fields or named groupings of fields
 * "Expansions": Create new field names that "expand" into bigger objects via complex loading (for example,
   if you have a user id field, you can ask for the entire user object to be loaded and included
   in the serialization.
 * Nested Model: Full support for nested models, lists of models, etc...
 * Schema: Augment pydantic json schema generation with fieldset options
-* Flask integration
-* FastAPI integration
+* Integration examples are given for:
+    - Django Ninja
+    - FastAPI
+    - Flask
 
 ## Installation
 
@@ -138,81 +151,6 @@ Result:
         model=mymodel_instance,
         fields=["subfield.field2"]
     )
-```
-
-## Quickstart FastAPI Integration
-
-```Python
-    from fastapi import FastAPI
-
-    # The critical thing is to use this alternate APIRouter subclass
-    from pydantic_sparsefields.integrations.fastapi import APIRouter
-
-    api = APIRouter()
-
-    @api.post("/some/path", response_model=MyModel)
-    def some_action() -> MyModel:
-        return MyModel(...)
-
-    @api.get("/some/other/path", response_model=MyModel)
-    def some_action() -> MyModel:
-        return MyModel(...)
-
-    app = FastAPI()
-    app.include_router(api, prefix="/")
-```
-
-Request specific fields in the response:
-
-```console
-$ curl -d '
-    {
-        "fields": ["extra", "expensive_field_5],
-        "more": "data"
-    }
-    '
-    http://localhost/some/path
-```
-
-
-## Quickstart Flask Integration
-
-```Python
-    from flask import Flask, make_response
-    from pydantic import BaseModel, ValidationError
-
-    from pydantic_sparsefields.integrations.flask import pydantic_api
-
-    class RequestModel(BaseModel):
-        ...
-
-    class ResponseModel(BaseModel):
-        ...
-
-    app = Flask("my_app")
-
-    @app.post("/some/path")
-    @pydantic_api()
-    # Note that the body and return type annotations are necessary for the @pydantic_api
-    # wrapper to function.
-    def my_api(body: RequestModel) -> ResponseModel:
-        return MyModel(...)  # or a dict in the shape of MyModel
-
-    # Flask doesn't handle pydantic validation errors natively so its a good idea
-    # to add an error handler for when the body data fails validation
-    app.register_error_handler(ValidationError, lambda e: make_response({"errors": e.errors()}, 400))
-```
-
-Request specific fields in the response:
-
-```console
-$ curl -d '
-    {
-        "fields": ["extra", "expensive_field_5],
-        "more": "data"
-    }
-    '
-    http://localhost/some/path
 ```
 
 ## License
