@@ -7,15 +7,19 @@ Enhance pydantic's output serialization with features that can help make better 
 
 For example:
 
-**api caller**: Give me a User object with only the email and id fields.
+```
+    api caller: Give me a User object with only the email and id fields.
 
-**api response**: Ok, instead of the usual 20 User fields, here is the object with only two.
+    api response: Ok, instead of the usual 20 User fields, here is the object with only two.
+```
 
 2) Expand field values into more complex objects when requested
 
-**api caller**: Give me 10 Blog objects AND the User Objects that created them in ONE API response.
+```
+    api caller: Give me 10 Blog objects AND the User Objects that created them in ONE API response.
 
-**api response**: Ok, in addition to Blog.user_id, I will also give you Blog.User and its fields.
+    api response: Ok, in addition to Blog.user_id, I will also give you Blog.User and its fields.
+```
 
 
 Both features are useful if you are using pydantic models to drive
