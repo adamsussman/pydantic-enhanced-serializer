@@ -25,9 +25,9 @@ class APIRouter(BaseAPIRouter):
         **kwargs: Any
     ) -> None:
         super().__init__(*args, **kwargs)
-        self.sparsefields_request_fields_name = request_fields_name
-        self.sparsefields_maximum_expansion_depth = maximum_expansion_depth
-        self.sparsefields_raise_error_on_expansion_not_found = (
+        self.serializer_request_fields_name = request_fields_name
+        self.serializer_maximum_expansion_depth = maximum_expansion_depth
+        self.serializer_raise_error_on_expansion_not_found = (
             raise_error_on_expansion_not_found
         )
 
@@ -83,10 +83,10 @@ class APIRouter(BaseAPIRouter):
                     fieldsets=fields_request,
                     maximum_expansion_depth=maximum_expansion_depth
                     if maximum_expansion_depth is not None
-                    else self.sparsefields_maximum_expansion_depth,
+                    else self.serializer_maximum_expansion_depth,
                     raise_error_on_expansion_not_found=raise_error_on_expansion_not_found
                     if raise_error_on_expansion_not_found is not None
-                    else self.sparsefields_raise_error_on_expansion_not_found,
+                    else self.serializer_raise_error_on_expansion_not_found,
                     expansion_context=request,
                     exclude_unset=kwargs.get("response_model_exclude_unset", False),
                     exclude_defaults=kwargs.get(
@@ -119,7 +119,7 @@ class APIRouter(BaseAPIRouter):
         if body_bytes:
             try:
                 data = await request.json()
-                raw_fields = data.get(self.sparsefields_request_fields_name)
+                raw_fields = data.get(self.serializer_request_fields_name)
                 from_body = True
             except JSONDecodeError:
                 pass
@@ -128,7 +128,7 @@ class APIRouter(BaseAPIRouter):
             raw_fields = [
                 f
                 for f in request.query_params.getlist(
-                    self.sparsefields_request_fields_name
+                    self.serializer_request_fields_name
                 )
                 if f
             ]
@@ -152,13 +152,13 @@ class APIRouter(BaseAPIRouter):
             [
                 ErrorWrapper(
                     exc=TypeError(
-                        "`{self.sparsefields_request_fields_name}` must be a "
+                        "`{self.serializer_request_fields_name}` must be a "
                         "(optionally  comma saperated) string or "
                         "list of (optionally comma separated) strings"
                     ),
                     loc=(
                         "body" if from_body else "query",
-                        self.sparsefields_request_fields_name,
+                        self.serializer_request_fields_name,
                     ),
                 )
             ]

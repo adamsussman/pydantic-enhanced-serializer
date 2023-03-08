@@ -4,7 +4,7 @@ import pytest
 from aiodataloader import DataLoader  # type: ignore
 from pydantic import BaseModel
 
-from pydantic_sparsefields import ModelExpansion
+from pydantic_enhanced_serializer import ModelExpansion
 
 from .utils import assert_expected_rendered_fieldset_data
 

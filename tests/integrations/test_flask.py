@@ -3,7 +3,7 @@ from typing import List
 from flask import Flask, make_response
 from pydantic import BaseModel, ValidationError
 
-from pydantic_sparsefields.integrations.flask import pydantic_api
+from pydantic_enhanced_serializer.integrations.flask import pydantic_api
 
 
 def test_field_filtered_response() -> None:

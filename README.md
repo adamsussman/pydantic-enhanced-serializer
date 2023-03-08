@@ -39,7 +39,7 @@ request model of GraphQL or other sophisticated APIs.
 ## Installation
 
 ```console
-$ pip install pydantic-sparsefields
+$ pip install pydantic-enhanced-serializer
 ```
 
 ## Help
@@ -56,7 +56,7 @@ to await it, depending on your application.
 
 ```Python
     from pydantic import BaseModel
-    from pydantic_sparsefields import render_fieldset_model
+    from pydantic_enhanced_serializer import render_fieldset_model
 
     class MyModel(BaseModel):
         field_1: str

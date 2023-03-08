@@ -5,7 +5,7 @@
     from fastapi import FastAPI
 
     # The critical thing is to use this alternate APIRouter subclass
-    from pydantic_sparsefields.integrations.fastapi import APIRouter
+    from pydantic_enhanced_serializer.integrations.fastapi import APIRouter
 
     api = APIRouter()
 
@@ -38,7 +38,7 @@ $ curl -d '
 
 ```python
     from django_ninja import NinjaAPI
-    from pydantic_sparsefields.integrations.django_ninja import PydanticFieldSetsRenderer
+    from pydantic_enhanced_serializer.integrations.django_ninja import PydanticFieldSetsRenderer
 
 
     api = NinjaAPI(
@@ -73,7 +73,7 @@ you mileage may vary.
     from flask import Flask, make_response
     from pydantic import BaseModel, ValidationError
 
-    from pydantic_sparsefields.integrations.flask import pydantic_api
+    from pydantic_enhanced_serializer.integrations.flask import pydantic_api
 
     class RequestModel(BaseModel):
         ...

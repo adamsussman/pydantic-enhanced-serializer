@@ -70,7 +70,7 @@ response:
 ## Simple Expansions on Pydantic Models
 
 ```Python
-from pydantic_sparsefields import ModelExpansion
+from pydantic_enhanced_serializer import ModelExpansion
 
 class File(BaseModel):
     some_attribute: str
@@ -174,7 +174,7 @@ This example uses [aiodataloader](https://pypi.org/project/aiodataloader/)
 to consolidate multiple expansions into one database call but any method
 using asyncio awaitables could be used.
 
-If you are providing your own implementation, `pydantic_sparsefields`
+If you are providing your own implementation, `pydantic_enhanced_serializer`
 will expect consolidation of load activity to occur when calling
 `asyncio.gather` on all the Awaitable expansion results you give
 it.
@@ -183,7 +183,7 @@ it.
 from typing import Awaitable
 
 from aiodataloader import DataLoader
-from pydantic_sparsefields import ModelExpansion, render_fieldset_model
+from pydantic_enhanced_serializer import ModelExpansion, render_fieldset_model
 from sqlalchemy import select
 
 from .mymodels import UserORMModel
@@ -267,7 +267,7 @@ result = render_fieldset_model(
 ## Expansion Method: Roll your own
 
 If you want to implement your own expansion method, subclass
-`pydantic_sparsefields.models.ExpansionBase` and implement the
+`pydantic_enhanced_serializer.models.ExpansionBase` and implement the
 `expand` methods.
 
 Note that the `expand` return must be an Awaitable that resolves

@@ -6,8 +6,8 @@ from asgiref.sync import async_to_sync
 from flask import make_response, request
 from pydantic import BaseModel, ValidationError
 
-from pydantic_sparsefields.render import render_fieldset_model
-from pydantic_sparsefields.schema import augment_schema_with_fieldsets
+from pydantic_enhanced_serializer.render import render_fieldset_model
+from pydantic_enhanced_serializer.schema import augment_schema_with_fieldsets
 
 
 # decorator that can be composed with regular Flask @blueprint.get/post/etc decorators.

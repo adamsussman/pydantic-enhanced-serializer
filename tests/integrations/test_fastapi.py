@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
-from pydantic_sparsefields.integrations.fastapi import APIRouter
+from pydantic_enhanced_serializer.integrations.fastapi import APIRouter
 
 
 @pytest.mark.parametrize(

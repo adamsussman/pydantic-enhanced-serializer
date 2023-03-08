@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from pydantic_sparsefields import ModelExpansion, augment_schema_with_fieldsets
+from pydantic_enhanced_serializer import ModelExpansion, augment_schema_with_fieldsets
 
 
 def test_fields_in_fieldset() -> None:
