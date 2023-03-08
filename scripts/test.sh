@@ -3,4 +3,4 @@
 set -e
 set -x
 
-pytest --doctest-modules . $@
+pytest --doctest-modules --ignore-glob="pydantic_enhanced_serializer/integrations/*" . $@
