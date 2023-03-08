@@ -1,7 +1,7 @@
 from asgiref.sync import async_to_sync
 from django.http import HttpRequest
-from django_ninja.parsers import Parser
-from django_ninja.renderers import JSONRenderer
+from ninja.parsers import Parser
+from ninja.renderers import JSONRenderer
 from pydantic import BaseModel
 
 from pydantic_enhanced_serializer import render_fieldset_model

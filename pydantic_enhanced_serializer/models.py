@@ -7,10 +7,11 @@ from pydantic import BaseModel, Field
 
 class ExpansionBase(BaseModel, abc.ABC):
     response_model: Optional[Any] = Field(
+        default=None,
         description=(
             "Response model the expanded object will be cast to.  This is "
             "mainly used as a type hint by the schema generator"
-        )
+        ),
     )
     merge_fields_upwards: Optional[bool] = Field(
         description=(

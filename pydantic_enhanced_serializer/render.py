@@ -52,7 +52,6 @@ async def render_expansions(
     exclude_defaults: bool = False,
     exclude_none: bool = False,
 ) -> Set[ExpansionInstruction]:
-
     new_expansions = set()
 
     for expansion in expansions:

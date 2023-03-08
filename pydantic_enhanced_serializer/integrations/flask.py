@@ -13,8 +13,8 @@ from pydantic_enhanced_serializer.schema import augment_schema_with_fieldsets
 # decorator that can be composed with regular Flask @blueprint.get/post/etc decorators.
 # This decorator uses type signatures to figure out the request and response pydantic models.
 def pydantic_api(
-    name: str = None,
-    tags: List[str] = None,
+    name: Optional[str] = None,
+    tags: Optional[List[str]] = None,
     success_status_code: int = 200,
     maximum_expansion_depth=5,
     request_fields_name: str = "fields",

@@ -24,7 +24,7 @@ MAPPING_SHAPES = {
 def fieldset_to_includes(
     fields_request: Union[str, Set[str], List[str]],
     model_data: Any,
-    path: List[Union[str, int]] = None,
+    path: Optional[List[Union[str, int]]] = None,
     expansion_context: Any = None,
 ) -> Tuple[dict, Set[ExpansionInstruction]]:
     """
@@ -202,7 +202,7 @@ def fieldset_to_includes(
                             expansion_definition=expansion,
                             expansion_name=field,
                             path=path + [idx, field],
-                            fieldsets=subfields,
+                            fieldsets=list(subfields),
                             source_model=source_model,
                         )
                     )
@@ -236,14 +236,18 @@ def fieldset_to_includes(
 
     if expansion_fieldsets:
         for expansion, expansion_fields in expansion_fieldsets.items():
+            expansion_definition = getattr(model.__config__, "fieldsets", {}).get(
+                expansion
+            )
+            if not expansion_definition:
+                continue
+
             expansions.add(
                 ExpansionInstruction(
-                    expansion_definition=getattr(model.__config__, "fieldsets", {}).get(
-                        expansion
-                    ),
+                    expansion_definition=expansion_definition,
                     expansion_name=expansion,
                     path=path + [expansion],
-                    fieldsets=expansion_fields,
+                    fieldsets=list(expansion_fields),
                     source_model=model,
                 )
             )

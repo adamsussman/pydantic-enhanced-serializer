@@ -101,7 +101,6 @@ def schema_extra(
                 )
 
             if schema["properties"][fieldset_name].get("type") == "array":
-
                 list_models = get_args(response_model)
                 if (
                     list_models
