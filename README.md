@@ -49,7 +49,7 @@ $ pip install pydantic-enhanced-serializer
 ## Help
 
 
-See [documentation](docs/) for full details.
+See [documentation](https://github.com/adamsussman/pydantic-enhanced-serializer/tree/main/docs) for full details.
 
 ## Quickstart Example - Python
 
