@@ -1,3 +1,12 @@
+Version 1.1.0
+-------------
+
+Pending...
+
+- Removed the flask integration and moved it to its own library: `flask-pydantic-api`
+  https://github.com/adamsussman/flask-pydantic-api
+
+
 Version 1.0.1
 -------------
 

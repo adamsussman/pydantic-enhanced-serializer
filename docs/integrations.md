@@ -65,15 +65,15 @@ $ curl -d '
 
 ## Quickstart Flask Integration
 
-Since Flask does not offer a pydantic based API natively, we offer here
-an example pydantic wrapper you can use.  This is only an example, so
-you mileage may vary.
+This library is integrated with [flask-pydantic-api](https://github.com/adamsussman/flask-pydantic-api).
+
+If you install this library, flask-pydantic-api will use it automatically.
 
 ```Python
     from flask import Flask, make_response
     from pydantic import BaseModel, ValidationError
 
-    from pydantic_enhanced_serializer.integrations.flask import pydantic_api
+    from flask_pydantic_api import pydantic_api
 
     class RequestModel(BaseModel):
         ...
