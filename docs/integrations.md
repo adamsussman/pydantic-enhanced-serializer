@@ -36,6 +36,8 @@ $ curl -d '
 
 ## Quickstart Django Ninja Integration
 
+(Note: waiting on https://github.com/vitalik/django-ninja/pull/635)
+
 ```python
     from django_ninja import NinjaAPI
     from pydantic_enhanced_serializer.integrations.django_ninja import PydanticFieldSetsRenderer
