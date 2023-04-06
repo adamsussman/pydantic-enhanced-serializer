@@ -1,9 +1,9 @@
 # Configuration and Usage
 
-## Use `pydantic_sparesfields.render_fieldset_model` instead of `model.dict()`
+## Use `pydantic_enhanced_serialzier.render_fieldset_model` instead of `model.dict()`
 
 ```Python
-    from pydantic_sparesfields import render_fieldset_model
+    from pydantic_enhanced_serialzier import render_fieldset_model
 
     result = render_fieldset_model(
         model=some_pydantic_model_instance,
