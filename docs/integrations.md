@@ -91,10 +91,6 @@ If you install this library, flask-pydantic-api will use it automatically.
     # wrapper to function.
     def my_api(body: RequestModel) -> ResponseModel:
         return MyModel(...)  # or a dict in the shape of MyModel
-
-    # Flask doesn't handle pydantic validation errors natively so its a good idea
-    # to add an error handler for when the body data fails validation
-    app.register_error_handler(ValidationError, lambda e: make_response({"errors": e.errors()}, 400))
 ```
 
 Request specific fields in the response:
