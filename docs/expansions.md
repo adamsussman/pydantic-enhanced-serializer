@@ -168,7 +168,7 @@ expansion on each one then that expansion code will be run for each
 that's a database call **per file**.  To get around this, you can
 coalesce expansion calls with the `Data Loader` method below.
 
-## Data Loader example
+## Aysncio Data Loader example
 
 This example uses [aiodataloader](https://pypi.org/project/aiodataloader/)
 to consolidate multiple expansions into one database call but any method
