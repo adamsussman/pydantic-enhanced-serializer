@@ -194,3 +194,22 @@ def _deep_update(into_dict: Dict[Any, Any], from_dict: Dict[Any, Any]) -> None:
             _deep_update(into_dict[key], from_dict[key])
         else:
             into_dict[key] = from_dict[key]
+
+
+def model_has_fieldsets_defined(model: Any) -> bool:
+    if is_optional(model):
+        model = get_optional_type(model)
+
+    if inspect.isclass(model) and issubclass(model, BaseModel):
+        if getattr(model.__config__, "fieldsets", None):
+            return True
+
+        else:
+            return any(
+                [
+                    model_has_fieldsets_defined(field.type_)
+                    for field in model.__fields__.values()
+                ]
+            )
+
+    return False
