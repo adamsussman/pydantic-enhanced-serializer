@@ -1,6 +1,7 @@
 import inspect
 from collections import defaultdict
 from functools import partial
+from itertools import chain
 from typing import (
     Any,
     Callable,
@@ -132,18 +133,22 @@ def schema_extra(
         for field_name in field_names:
             fieldsets_per_field[field_name].add(fieldset_name)
 
-    for field_name, fieldset_names in fieldsets_per_field.items():
-        if not fieldset_names:
-            continue
+    for field_name in set(chain(model.__fields__.keys(), fieldsets_per_field.keys())):
+        fieldset_names = fieldsets_per_field.get(field_name) or set()
 
         if "default" in fieldset_names and len(fieldset_names) == 1:
             continue
 
-        description = (
-            "Included in fieldset(s): "
-            + ", ".join([f for f in sorted(fieldset_names) if f != "default"])
-            + "."
-        )
+        if len(fieldset_names) > 0:
+            description = (
+                "Request using fieldset(s): "
+                + ", ".join(
+                    [f"`{f}`" for f in sorted(fieldset_names) if f != "default"]
+                )
+                + "."
+            )
+        else:
+            description = "Not returned by default.  Request this field by name."
 
         schema["properties"][field_name]["description"] = (
             schema["properties"][field_name].get("description", "") + description
