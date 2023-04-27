@@ -1,7 +1,7 @@
 Version 1.1.1
 -------------
 
-Release pending...
+Released 2023-04-26
 
 - Fix case of Optional[Dict] where value is None
 
