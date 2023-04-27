@@ -1,3 +1,11 @@
+Version 1.1.1
+-------------
+
+Release pending...
+
+- Fix case of Optional[Dict] where value is None
+
+
 Version 1.1.0
 -------------
 

@@ -171,7 +171,7 @@ def fieldset_to_includes(
                 if field not in current_includes_ptr:
                     current_includes_ptr[field] = {}
 
-                for key, value in getattr(model, field_obj.name).items():
+                for key, value in (getattr(model, field_obj.name) or {}).items():
                     sub_includes, sub_expansions = fieldset_to_includes(
                         subfields, value, path + [field, key]
                     )

@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pytest
 from pydantic import BaseModel
@@ -923,5 +923,25 @@ def test_fieldsets_dict_list_dict() -> None:
                     {"nest3": {"str1": "c3t1str1val"}},
                 ],
             }
+        },
+    )
+
+
+def test_optional_dict_none() -> None:
+    class Thing(BaseModel):
+        str1: str
+        data: Optional[Dict[str, Any]] = None
+
+        class Config:
+            fieldsets = {"default": ["*"]}
+
+    thing = Thing(str1="foo")
+
+    assert_expected_rendered_fieldset_data(
+        thing,
+        "",
+        {
+            "str1": "foo",
+            "data": None,
         },
     )
