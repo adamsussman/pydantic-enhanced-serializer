@@ -1,3 +1,12 @@
+Version 1.1.2
+-------------
+
+Released 2023-06-15
+
+- Change expansion object schema $ref in openapi to point at #/components/schema root to be more
+  in line with OpenAPI 3.x standards.
+
+
 Version 1.1.1
 -------------
 

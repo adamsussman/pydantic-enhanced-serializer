@@ -216,16 +216,20 @@ def test_expansion_model() -> None:
     assert schema["properties"]["expando"] == {
         "title": "Expando",
         "description": "Request using fieldset(s): `expando`.",
-        "$ref": "#/definitions/ExpandedThing",
+        "$ref": "#/components/schemas/ExpandedThing",
     }
 
-    assert "ExpandedThing" in schema["definitions"]
+    assert "ExpandedThing" in schema["components"]["schemas"]
     assert (
-        schema["definitions"]["ExpandedThing"]["properties"]["efield1"]["description"]
+        schema["components"]["schemas"]["ExpandedThing"]["properties"]["efield1"][
+            "description"
+        ]
         == "Request using fieldset(s): `f1`."
     )
     assert (
-        schema["definitions"]["ExpandedThing"]["properties"]["efield2"]["description"]
+        schema["components"]["schemas"]["ExpandedThing"]["properties"]["efield2"][
+            "description"
+        ]
         == "Request using fieldset(s): `f1`, `f2`."
     )
 
@@ -264,17 +268,21 @@ def test_expansion_model_list() -> None:
         "description": "Request using fieldset(s): `expando`.",
         "type": "array",
         "items": {
-            "$ref": "#/definitions/ExpandedThing",
+            "$ref": "#/components/schemas/ExpandedThing",
         },
     }
 
-    assert "ExpandedThing" in schema["definitions"]
+    assert "ExpandedThing" in schema["components"]["schemas"]
     assert (
-        schema["definitions"]["ExpandedThing"]["properties"]["efield1"]["description"]
+        schema["components"]["schemas"]["ExpandedThing"]["properties"]["efield1"][
+            "description"
+        ]
         == "Request using fieldset(s): `f1`."
     )
     assert (
-        schema["definitions"]["ExpandedThing"]["properties"]["efield2"]["description"]
+        schema["components"]["schemas"]["ExpandedThing"]["properties"]["efield2"][
+            "description"
+        ]
         == "Request using fieldset(s): `f1`, `f2`."
     )
 
@@ -358,7 +366,7 @@ def test_optional_expansion_response_model() -> None:
     assert schema["properties"]["expando"] == {
         "title": "Expando",
         "description": "Request using fieldset(s): `expando`.",
-        "$ref": "#/definitions/Expanded",
+        "$ref": "#/components/schemas/Expanded",
     }
 
 

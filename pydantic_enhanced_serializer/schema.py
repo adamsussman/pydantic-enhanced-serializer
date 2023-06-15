@@ -88,12 +88,14 @@ def schema_extra(
                 model_name = normalize_name(response_model.__name__)
                 schema["properties"][fieldset_name][
                     "$ref"
-                ] = f"#/definitions/{model_name}"
+                ] = f"#/components/schemas/{model_name}"
 
                 augment_schema_with_fieldsets(response_model)
-                if "definitions" not in schema:
-                    schema["definitions"] = {}
-                schema["definitions"][model_name] = model_schema(response_model)
+                if "components" not in schema:
+                    schema["components"] = {"schemas": {}}
+                schema["components"]["schemas"][model_name] = model_schema(
+                    response_model
+                )
 
             else:
                 add_field_type_to_schema(
@@ -110,13 +112,15 @@ def schema_extra(
                 ):
                     model_name = normalize_name(list_models[0].__name__)
                     schema["properties"][fieldset_name]["items"] = {
-                        "$ref": f"#/definitions/{model_name}"
+                        "$ref": f"#/components/schemas/{model_name}"
                     }
 
                     augment_schema_with_fieldsets(list_models[0])
-                    if "definitions" not in schema:
-                        schema["definitions"] = {}
-                    schema["definitions"][model_name] = model_schema(list_models[0])
+                    if "components" not in schema:
+                        schema["components"] = {"schemas": {}}
+                    schema["components"]["schemas"][model_name] = model_schema(
+                        list_models[0]
+                    )
 
                 elif list_models:
                     # add_field_type_to_schema is not copy-safe on subdicts
