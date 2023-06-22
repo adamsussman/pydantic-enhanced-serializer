@@ -16,7 +16,7 @@ from typing import (
 )
 
 from pydantic import BaseModel
-from pydantic.schema import add_field_type_to_schema, model_schema, normalize_name
+from pydantic.schema import add_field_type_to_schema, normalize_name
 
 from .models import ExpansionBase
 
@@ -91,11 +91,6 @@ def schema_extra(
                 ] = f"#/components/schemas/{model_name}"
 
                 augment_schema_with_fieldsets(response_model)
-                if "components" not in schema:
-                    schema["components"] = {"schemas": {}}
-                schema["components"]["schemas"][model_name] = model_schema(
-                    response_model
-                )
 
             else:
                 add_field_type_to_schema(
@@ -116,11 +111,6 @@ def schema_extra(
                     }
 
                     augment_schema_with_fieldsets(list_models[0])
-                    if "components" not in schema:
-                        schema["components"] = {"schemas": {}}
-                    schema["components"]["schemas"][model_name] = model_schema(
-                        list_models[0]
-                    )
 
                 elif list_models:
                     # add_field_type_to_schema is not copy-safe on subdicts

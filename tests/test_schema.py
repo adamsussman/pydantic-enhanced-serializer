@@ -219,20 +219,6 @@ def test_expansion_model() -> None:
         "$ref": "#/components/schemas/ExpandedThing",
     }
 
-    assert "ExpandedThing" in schema["components"]["schemas"]
-    assert (
-        schema["components"]["schemas"]["ExpandedThing"]["properties"]["efield1"][
-            "description"
-        ]
-        == "Request using fieldset(s): `f1`."
-    )
-    assert (
-        schema["components"]["schemas"]["ExpandedThing"]["properties"]["efield2"][
-            "description"
-        ]
-        == "Request using fieldset(s): `f1`, `f2`."
-    )
-
 
 def test_expansion_model_list() -> None:
     class ExpandedThing(BaseModel):
@@ -271,20 +257,6 @@ def test_expansion_model_list() -> None:
             "$ref": "#/components/schemas/ExpandedThing",
         },
     }
-
-    assert "ExpandedThing" in schema["components"]["schemas"]
-    assert (
-        schema["components"]["schemas"]["ExpandedThing"]["properties"]["efield1"][
-            "description"
-        ]
-        == "Request using fieldset(s): `f1`."
-    )
-    assert (
-        schema["components"]["schemas"]["ExpandedThing"]["properties"]["efield2"][
-            "description"
-        ]
-        == "Request using fieldset(s): `f1`, `f2`."
-    )
 
 
 def test_expansion_scalar() -> None:
