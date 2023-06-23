@@ -1,3 +1,12 @@
+Version 1.1.3
+-------------
+
+Released 2023-06-22
+
+- Remove all export of unrelated "#components", since nothing actually uses it.  Callers will have
+  to manage extra/unknown referenced components themselves.
+
+
 Version 1.1.2
 -------------
 
