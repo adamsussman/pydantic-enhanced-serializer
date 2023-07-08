@@ -1,7 +1,7 @@
 Version 1.1.4
 -------------
 
-Released TBA
+Released 2023-07-08
 
 - Fix case of nested array expansions with added fields overwritting each others attributes.
 
