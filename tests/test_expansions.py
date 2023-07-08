@@ -1,4 +1,5 @@
-from typing import Any, Awaitable, List
+import datetime
+from typing import Any, Awaitable, List, Optional
 
 import pytest
 from aiodataloader import DataLoader  # type: ignore
@@ -811,5 +812,83 @@ def test_expansion_in_default_fieldset() -> None:
                     "sub": "subf2.1",
                 },
             ]
+        },
+    )
+
+
+def test_nested_array_expansion_overlap() -> None:
+    # Expansions should not overwrite request fields where the request
+    # field is a standalone field not part of other fieldset groups
+
+    class SubEntity(BaseModel):
+        addr: str
+
+    class Struct(BaseModel):
+        num_stuff: int
+
+    class Entity(BaseModel):
+        entity_id: str
+        structure: Optional[Struct]
+        created: datetime.datetime
+
+        class Config:
+            fieldsets = {
+                "default": ["entity_id"],
+                "sub_entity": ModelExpansion(
+                    response_model=SubEntity, expansion_method_name="get_sub_entity"
+                ),
+                "timestamps": ["created"],
+            }
+
+        def get_sub_entity(self, context: Any) -> SubEntity:
+            return SubEntity(addr="somewhere")
+
+    now = datetime.datetime.now()
+
+    class Thing(BaseModel):
+        thing_id: str
+
+        class Config:
+            fieldsets = {
+                "default": ["thing_id"],
+                "entities": ModelExpansion(
+                    response_model=List[Entity],
+                    expansion_method_name="get_entities",
+                ),
+            }
+
+        def get_entities(self, context: Any) -> List[Entity]:
+            return [
+                Entity(entity_id="foo", structure=Struct(num_stuff=11), created=now)
+            ]
+
+    class Response(BaseModel):
+        thing: Thing
+
+    response = Response(thing=Thing(thing_id="bar"))
+
+    assert_expected_rendered_fieldset_data(
+        response,
+        [
+            "thing.entities.sub_entity",
+            "thing.entities.structure",
+            "thing.entities.timestamps",
+        ],
+        {
+            "thing": {
+                "thing_id": "bar",
+                "entities": [
+                    {
+                        "entity_id": "foo",
+                        "sub_entity": {
+                            "addr": "somewhere",
+                        },
+                        "structure": {
+                            "num_stuff": 11,
+                        },
+                        "created": now,
+                    }
+                ],
+            }
         },
     )

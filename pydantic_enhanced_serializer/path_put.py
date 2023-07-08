@@ -63,6 +63,10 @@ def path_put(data: Any, path: Union[PATH_TYPE, str], value: Any) -> Any:
     >>> path_put({"things": [{"s1": "v1", "sub": {"ss1": "sv1"}}]}, "things.0.sub", {"ss2": "sv2"})
     {'things': [{'s1': 'v1', 'sub': {'ss1': 'sv1', 'ss2': 'sv2'}}]}
 
+    >>> path_put({"thing": {"thing_id": "foo", "subs": [{"sub_id": 1, "sprop1": 11}]}},\
+            "thing.subs", [{"sub_id": 1, "sprop2": 22}])
+    {'thing': {'thing_id': 'foo', 'subs': [{'sub_id': 1, 'sprop1': 11, 'sprop2': 22}]}}
+
     """
     if data is None:
         return value
@@ -97,7 +101,11 @@ def _path_put_dict(data: Dict, path: PATH_TYPE, value: Any) -> None:
 
     path0 = path.pop(0)
     if not path:
-        if path0 in data and isinstance(value, dict):
+        if path0 in data and isinstance(data[path0], list) and isinstance(value, list):
+            for a, b in zip(data[path0], value):
+                a.update(b)
+
+        elif path0 in data and isinstance(value, dict):
             data[path0].update(value)
         else:
             data[path0] = value
