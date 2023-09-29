@@ -25,15 +25,15 @@ def test_fields_in_fieldset() -> None:
 
     assert (
         schema["properties"]["field1"]["description"]
-        == "Request using fieldset(s): `extra`."
+        == "Request by name or using fieldset(s): `extra`."
     )
     assert (
         schema["properties"]["field2"]["description"]
-        == "Request using fieldset(s): `extra`, `extra2`."
+        == "Request by name or using fieldset(s): `extra`, `extra2`."
     )
     assert (
         schema["properties"]["field3"]["description"]
-        == "Request using fieldset(s): `extra2`."
+        == "Request by name or using fieldset(s): `extra2`."
     )
 
 
@@ -58,11 +58,11 @@ def test_fields_in_default() -> None:
     assert "description" not in schema["properties"]["field1"]
     assert (
         schema["properties"]["field2"]["description"]
-        == "Request using fieldset(s): `extra`."
+        == "Request by name or using fieldset(s): `extra`."
     )
     assert (
         schema["properties"]["field3"]["description"]
-        == "Request using fieldset(s): `extra`."
+        == "Request by name or using fieldset(s): `extra`."
     )
 
 
@@ -138,11 +138,11 @@ def test_sub_object() -> None:
     assert "SubThing" in schema["definitions"]
     assert (
         schema["definitions"]["SubThing"]["properties"]["sfield1"]["description"]
-        == "Request using fieldset(s): `f1`, `f2`."
+        == "Request by name or using fieldset(s): `f1`, `f2`."
     )
     assert (
         schema["definitions"]["SubThing"]["properties"]["sfield2"]["description"]
-        == "Request using fieldset(s): `f2`."
+        == "Request by name or using fieldset(s): `f2`."
     )
 
 
@@ -176,11 +176,11 @@ def test_sub_object_list() -> None:
     assert "SubThing" in schema["definitions"]
     assert (
         schema["definitions"]["SubThing"]["properties"]["sfield1"]["description"]
-        == "Request using fieldset(s): `f1`, `f2`."
+        == "Request by name or using fieldset(s): `f1`, `f2`."
     )
     assert (
         schema["definitions"]["SubThing"]["properties"]["sfield2"]["description"]
-        == "Request using fieldset(s): `f2`."
+        == "Request by name or using fieldset(s): `f2`."
     )
 
 
@@ -215,7 +215,7 @@ def test_expansion_model() -> None:
     assert "expando" in schema["properties"]
     assert schema["properties"]["expando"] == {
         "title": "Expando",
-        "description": "Request using fieldset(s): `expando`.",
+        "description": "Request by name or using fieldset(s): `expando`.",
         "$ref": "#/components/schemas/ExpandedThing",
     }
 
@@ -251,7 +251,7 @@ def test_expansion_model_list() -> None:
     assert "expando" in schema["properties"]
     assert schema["properties"]["expando"] == {
         "title": "Expando",
-        "description": "Request using fieldset(s): `expando`.",
+        "description": "Request by name or using fieldset(s): `expando`.",
         "type": "array",
         "items": {
             "$ref": "#/components/schemas/ExpandedThing",
@@ -280,7 +280,7 @@ def test_expansion_scalar() -> None:
     assert "expando" in schema["properties"]
     assert schema["properties"]["expando"] == {
         "title": "Expando",
-        "description": "Request using fieldset(s): `expando`.",
+        "description": "Request by name or using fieldset(s): `expando`.",
         "type": "integer",
     }
 
@@ -306,7 +306,7 @@ def test_expansion_scalar_list() -> None:
     assert "expando" in schema["properties"]
     assert schema["properties"]["expando"] == {
         "title": "Expando",
-        "description": "Request using fieldset(s): `expando`.",
+        "description": "Request by name or using fieldset(s): `expando`.",
         "type": "array",
         "items": {
             "type": "integer",
@@ -337,7 +337,7 @@ def test_optional_expansion_response_model() -> None:
     assert "expando" in schema["properties"]
     assert schema["properties"]["expando"] == {
         "title": "Expando",
-        "description": "Request using fieldset(s): `expando`.",
+        "description": "Request by name or using fieldset(s): `expando`.",
         "$ref": "#/components/schemas/Expanded",
     }
 

@@ -135,7 +135,7 @@ def schema_extra(
 
         if len(fieldset_names) > 0:
             description = (
-                "Request using fieldset(s): "
+                "Request by name or using fieldset(s): "
                 + ", ".join(
                     [f"`{f}`" for f in sorted(fieldset_names) if f != "default"]
                 )
