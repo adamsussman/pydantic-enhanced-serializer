@@ -1,3 +1,12 @@
+Version 1.1.5
+-------------
+
+Released 2023-10-01
+
+- Fix bug where dicts nested inside the same model schema but with different individual key sets
+  were interfering with each other and causing some dicts to not return all (often any) of their keys.
+
+
 Version 1.1.4
 -------------
 
