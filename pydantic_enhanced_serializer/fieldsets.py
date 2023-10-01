@@ -55,7 +55,7 @@ def fieldset_to_includes(
         - If no `fieldsets` config value is present, then ALL fields will be returned
           (ie: normal pydantic.dict behavior).
     """
-    includes: Dict[str, Any] = {}
+    includes: Dict[Union[str, int], Any] = defaultdict(dict)
     current_includes_ptr = includes
     expansions: Set[ExpansionInstruction] = set()
     expansion_fieldsets: Dict[str, Set[str]] = defaultdict(set)
@@ -73,9 +73,6 @@ def fieldset_to_includes(
 
     model = model_data
     if isinstance(model, list):
-        current_includes_ptr["__all__"] = {}
-        current_includes_ptr = current_includes_ptr["__all__"]
-
         for idx, submodel in enumerate(model):
             sub_includes, sub_expansions = fieldset_to_includes(
                 fields_request, submodel, path + [idx] if path else [idx]

@@ -1,9 +1,9 @@
 import datetime
-from typing import Any, Awaitable, List, Optional
+from typing import Any, Awaitable, Dict, List, Optional
 
 import pytest
 from aiodataloader import DataLoader  # type: ignore
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from pydantic_enhanced_serializer import ModelExpansion
 
@@ -888,6 +888,174 @@ def test_nested_array_expansion_overlap() -> None:
                         },
                         "created": now,
                     }
+                ],
+            }
+        },
+    )
+
+
+def test_nested_expansion_dict_vary_keys() -> None:
+    class Storey(BaseModel):
+        s_attr1: str
+        component_counts: Optional[Dict[str, int]]
+
+    class ItemStructure(BaseModel):
+        attr1: str
+        storeys: List[Storey] = Field(min_items=1)
+
+    class Item(BaseModel):
+        item_id: str
+        structure: Optional[ItemStructure] = None
+
+        class Config:
+            fieldsets = {
+                "default": ["item_id"],
+            }
+
+    class Thing(BaseModel):
+        thing_id: str
+
+        class Config:
+            fieldsets = {
+                "default": ["thing_id"],
+                "items": ModelExpansion(
+                    response_model=List[Item],
+                    expansion_method_name="get_items",
+                ),
+            }
+
+        def get_items(self, context: Any) -> List[Item]:
+            return [
+                Item(
+                    item_id="1234",
+                    structure=ItemStructure(
+                        attr1="a_val1",
+                        storeys=[
+                            Storey(
+                                s_attr1="Floor 1-1",
+                                component_counts={
+                                    "key11": 11,
+                                    "key12": 12,
+                                },
+                            ),
+                            Storey(
+                                s_attr1="Floor 1-2",
+                                component_counts={
+                                    "key21": 21,
+                                    "key22": 22,
+                                    "key23": 23,
+                                },
+                            ),
+                        ],
+                    ),
+                ),
+                Item(
+                    item_id="5678",
+                    structure=ItemStructure(
+                        attr1="a_val2",
+                        storeys=[
+                            Storey(
+                                s_attr1="Floor 2-1",
+                                component_counts={
+                                    "key211": 211,
+                                    "key212": 212,
+                                },
+                            ),
+                            Storey(
+                                s_attr1="Floor 2-2",
+                                component_counts={
+                                    "key221": 221,
+                                    "key222": 222,
+                                    "key223": 223,
+                                },
+                            ),
+                            Storey(
+                                s_attr1="Floor 3-2",
+                                component_counts={
+                                    "key321": 321,
+                                    "key322": 322,
+                                    "key323": 323,
+                                    "key324": 324,
+                                },
+                            ),
+                        ],
+                    ),
+                ),
+            ]
+
+    class Response(BaseModel):
+        thing: Thing
+
+    response = Response(
+        thing=Thing(
+            thing_id="abc",
+        )
+    )
+
+    assert_expected_rendered_fieldset_data(
+        response,
+        [
+            "thing.items.structure",
+        ],
+        {
+            "thing": {
+                "thing_id": "abc",
+                "items": [
+                    {
+                        "item_id": "1234",
+                        "structure": {
+                            "attr1": "a_val1",
+                            "storeys": [
+                                {
+                                    "s_attr1": "Floor 1-1",
+                                    "component_counts": {
+                                        "key11": 11,
+                                        "key12": 12,
+                                    },
+                                },
+                                {
+                                    "s_attr1": "Floor 1-2",
+                                    "component_counts": {
+                                        "key21": 21,
+                                        "key22": 22,
+                                        "key23": 23,
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        "item_id": "5678",
+                        "structure": {
+                            "attr1": "a_val2",
+                            "storeys": [
+                                {
+                                    "s_attr1": "Floor 2-1",
+                                    "component_counts": {
+                                        "key211": 211,
+                                        "key212": 212,
+                                    },
+                                },
+                                {
+                                    "s_attr1": "Floor 2-2",
+                                    "component_counts": {
+                                        "key221": 221,
+                                        "key222": 222,
+                                        "key223": 223,
+                                    },
+                                },
+                                {
+                                    "s_attr1": "Floor 3-2",
+                                    "component_counts": {
+                                        "key321": 321,
+                                        "key322": 322,
+                                        "key323": 323,
+                                        "key324": 324,
+                                    },
+                                },
+                            ],
+                        },
+                    },
                 ],
             }
         },
