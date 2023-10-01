@@ -83,7 +83,7 @@ def fieldset_to_includes(
 
             # If nothing under submodels is a base model, we need to add an
             # extra "__all__" for pydantic to pick up all the non-model data
-            current_includes_ptr.update(sub_includes or {"__all__": {}})
+            current_includes_ptr[idx].update(sub_includes or {"__all__": {}})
             expansions.update(sub_expansions)
 
         return {k: v for k, v in includes.items() if v is not None}, expansions
@@ -169,20 +169,20 @@ def fieldset_to_includes(
                 # Field is a dict, values may or may not contain models
                 # or nested dicts/lists of models
                 if field not in current_includes_ptr:
-                    current_includes_ptr[field] = {}
+                    current_includes_ptr[field] = defaultdict(dict)
 
                 for key, value in (getattr(model, field_obj.name) or {}).items():
                     sub_includes, sub_expansions = fieldset_to_includes(
                         subfields, value, path + [field, key]
                     )
 
-                    current_includes_ptr[field][key] = sub_includes
+                    current_includes_ptr[field][key].update(sub_includes)
                     expansions.update(sub_expansions)
 
             else:
                 # Field is a single model
                 if field not in current_includes_ptr:
-                    current_includes_ptr[field] = {}
+                    current_includes_ptr[field] = defaultdict(dict)
 
                 sub_includes, sub_expansions = fieldset_to_includes(
                     subfields, getattr(model, field_obj.name), path + [field]
