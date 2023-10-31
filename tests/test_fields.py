@@ -1,7 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
 import pytest
 from pydantic import BaseModel
+
+from pydantic_enhanced_serializer import FieldsetConfig
 
 from .utils import assert_expected_rendered_fieldset_data
 
@@ -144,9 +146,7 @@ def test_single_level_by_field_name_any_config(
         field2: str
         field3: str
 
-        class Config:
-            # XXX: this is a weird control...should be more explicit
-            fieldsets: dict = {}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={})
 
     response = ResponseModel(
         field1="one",
@@ -184,8 +184,7 @@ def test_single_level_by_field_subset_default(
         field2: str
         field3: str
 
-        class Config:
-            fieldsets = {"default": ["field3"]}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["field3"]})
 
     response = ResponseModel(
         field1="one",
@@ -202,8 +201,9 @@ def test_named_fieldset() -> None:
         field2: str
         field3: str
 
-        class Config:
-            fieldsets = {"fset1": ["field3"], "fset2": ["field1", "field2"]}
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={"fset1": ["field3"], "fset2": ["field1", "field2"]}
+        )
 
     response = ResponseModel(
         field1="one",
@@ -228,8 +228,9 @@ def test_named_fieldset_and_named_field() -> None:
         field2: str
         field3: str
 
-        class Config:
-            fieldsets = {"fset1": ["field3"], "fset2": ["field1", "field2"]}
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={"fset1": ["field3"], "fset2": ["field1", "field2"]}
+        )
 
     response = ResponseModel(
         field1="one",
@@ -335,9 +336,7 @@ def test_nested_by_field_name_any_config_both(
         subfield1: str
         subfield2: str
 
-        class Config:
-            # XXX: this is a weird control...should be more explicit
-            fieldsets: dict = {}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={})
 
     class ResponseModel(BaseModel):
         field1: str
@@ -345,9 +344,7 @@ def test_nested_by_field_name_any_config_both(
         field3: str
         sub: SubModel
 
-        class Config:
-            # XXX: this is a weird control...should be more explicit
-            fieldsets: dict = {}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={})
 
     response = ResponseModel(
         field1="one",
@@ -380,8 +377,7 @@ def test_nested_by_field_subset_default(fields: List[str], expected: dict) -> No
         subfield1: str
         subfield2: str
 
-        class Config:
-            fieldsets = {"default": ["subfield2"]}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["subfield2"]})
 
     class ResponseModel(BaseModel):
         field1: str
@@ -389,8 +385,7 @@ def test_nested_by_field_subset_default(fields: List[str], expected: dict) -> No
         field3: str
         sub: SubModel
 
-        class Config:
-            fieldsets = {"default": ["field3"]}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["field3"]})
 
     response = ResponseModel(
         field1="one",
@@ -425,8 +420,7 @@ def test_nested_by_field_in_default(fields: List[str], expected: dict) -> None:
         subfield1: str
         subfield2: str
 
-        class Config:
-            fieldsets = {"default": ["subfield2"]}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["subfield2"]})
 
     class ResponseModel(BaseModel):
         field1: str
@@ -434,8 +428,9 @@ def test_nested_by_field_in_default(fields: List[str], expected: dict) -> None:
         field3: str
         sub: SubModel
 
-        class Config:
-            fieldsets = {"default": ["field3", "sub"]}
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={"default": ["field3", "sub"]}
+        )
 
     response = ResponseModel(
         field1="one",
@@ -455,11 +450,12 @@ def test_nested_named_fieldset_and_named_field() -> None:
         subfield1: str
         subfield2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "subfset1": ["subfield2"],
                 "subfset2": ["subfield1", "subfield2"],
             }
+        )
 
     class ResponseModel(BaseModel):
         field1: str
@@ -467,10 +463,11 @@ def test_nested_named_fieldset_and_named_field() -> None:
         field3: str
         sub: SubModel
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["field3"],
             }
+        )
 
     response = ResponseModel(
         field1="one",
@@ -492,11 +489,12 @@ def test_nested_named_fieldset_sublist() -> None:
         subfield1: str
         subfield2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "subfset1": ["subfield2"],
                 "subfset2": ["subfield1", "subfield2"],
             }
+        )
 
     class ResponseModel(BaseModel):
         field1: str
@@ -504,10 +502,11 @@ def test_nested_named_fieldset_sublist() -> None:
         field3: str
         sub: List[SubModel]
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["field3"],
             }
+        )
 
     response = ResponseModel(
         field1="one",
@@ -537,10 +536,11 @@ def test_nested_model_with_default() -> None:
         subfield1: str
         subfield2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["subfield2"],
             }
+        )
 
     class ResponseModel(BaseModel):
         field1: str
@@ -548,10 +548,11 @@ def test_nested_model_with_default() -> None:
         field3: str
         sub: List[SubModel]
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["field3"],
             }
+        )
 
     response = ResponseModel(
         field1="one",
@@ -581,10 +582,11 @@ def test_nested_model_with_default_at_all_levels() -> None:
         subfield1: str
         subfield2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["subfield2"],
             }
+        )
 
     class ResponseModel(BaseModel):
         field1: str
@@ -592,10 +594,11 @@ def test_nested_model_with_default_at_all_levels() -> None:
         field3: str
         sub: List[SubModel]
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["field3", "sub"],
             }
+        )
 
     response = ResponseModel(
         field1="one",
@@ -639,8 +642,7 @@ def test_default_start() -> None:
         field2: str
         field3: str
 
-        class Config:
-            fieldsets = {"default": "*"}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["*"]})
 
     response = ResponseModel(
         field1="one",
@@ -659,8 +661,7 @@ def test_fieldsets_as_string() -> None:
         field2: str
         field3: str
 
-        class Config:
-            fieldsets = {"default": "field1"}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["field1"]})
 
     response = ResponseModel(
         field1="one",
@@ -678,11 +679,12 @@ def test_fieldset_that_references_itself() -> None:
         field1: str
         field2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["field1"],
                 "field2": ["field2"],
             }
+        )
 
     class ResponseModel(BaseModel):
         things: List[Thing]
@@ -708,11 +710,12 @@ def test_fieldset_that_references_itself_but_does_not_exist_as_a_field() -> None
         field1: str
         field2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["field1"],
                 "does_not_exist": ["does_not_exist", "field2"],
             }
+        )
 
     class ResponseModel(BaseModel):
         things: List[Thing]
@@ -738,10 +741,11 @@ def test_fieldsets_dict() -> None:
         str1: str
         str2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["str1"],
             }
+        )
 
     class Container(BaseModel):
         things: Dict[str, Thing]
@@ -793,10 +797,11 @@ def test_fieldsets_dict_list() -> None:
         str1: str
         str2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["str1"],
             }
+        )
 
     class Container(BaseModel):
         things: Dict[str, List[Thing]]
@@ -858,10 +863,11 @@ def test_fieldsets_dict_dict() -> None:
         str1: str
         str2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["str1"],
             }
+        )
 
     class Container(BaseModel):
         things: Dict[str, Dict[str, Thing]]
@@ -890,10 +896,11 @@ def test_fieldsets_dict_list_dict() -> None:
         str1: str
         str2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["str1"],
             }
+        )
 
     class Container(BaseModel):
         things: Dict[str, List[Dict[str, Thing]]]
@@ -932,8 +939,7 @@ def test_optional_dict_none() -> None:
         str1: str
         data: Optional[Dict[str, Any]] = None
 
-        class Config:
-            fieldsets = {"default": ["*"]}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["*"]})
 
     thing = Thing(str1="foo")
 

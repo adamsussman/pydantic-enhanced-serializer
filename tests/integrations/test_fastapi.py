@@ -1,10 +1,11 @@
-from typing import List
+from typing import ClassVar, List
 
 import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
+from pydantic_enhanced_serializer import FieldsetConfig
 from pydantic_enhanced_serializer.integrations.fastapi import APIRouter
 
 
@@ -60,17 +61,17 @@ def test_field_filtered_response() -> None:
         sfield1: str
         sfield2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["sfield1"],
             }
+        )
 
     class Response(BaseModel):
         field1: str
         subfields: List[SubModel]
 
-        class Config:
-            fieldsets = {"default": ["field1"]}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["field1"]})
 
     api_response = Response(
         field1="field1 value",

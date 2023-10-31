@@ -1,8 +1,8 @@
 import abc
 from asyncio import get_event_loop, isfuture
-from typing import Any, Awaitable, List, Optional, Union
+from typing import Any, Awaitable, Dict, List, Optional, TypedDict, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExpansionBase(BaseModel, abc.ABC):
@@ -43,6 +43,10 @@ class ExpansionBase(BaseModel, abc.ABC):
         ...
 
 
+class FieldsetConfig(TypedDict, total=False):
+    fieldsets: Optional[Dict[str, List[str] | ExpansionBase]]
+
+
 class ModelExpansion(ExpansionBase):
     """
     Expander will call:
@@ -80,8 +84,7 @@ class ExpansionInstruction(BaseModel):
     # render time
     future: Optional[Awaitable] = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __hash__(self) -> int:
         return sum([hash(str(p)) for p in self.path] + [hash(self.expansion_name)])

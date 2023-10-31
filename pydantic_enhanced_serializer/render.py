@@ -20,7 +20,7 @@ async def render_fieldset_model(
     exclude_none: bool = False,
 ) -> dict:
     includes, expansions = fieldset_to_includes(fieldsets, model)
-    rendered_model = model.dict(
+    rendered_model = model.model_dump(
         include=includes,
         exclude_unset=exclude_unset,
         exclude_defaults=exclude_defaults,
@@ -87,15 +87,10 @@ async def render_expansions(
                 "a pydantic.BaseModel or a dict.  Found `{type(expanded_value)}`."
             )
 
-        # expanded_value may be a model or it might be a list/dict/etc...
-        # pydantic's _get_value can handle this complexity for any value
-        # whereas model.dict only works on a model.
-        rendered_value = BaseModel._get_value(
-            v=expanded_value,
-            to_dict=True,
-            by_alias=False,
-            include=includes,
-            exclude=None,
+        # serialize new expanded values
+        rendered_value = nested_structure_model_dump(
+            value=expanded_value,
+            includes=includes,
             exclude_unset=exclude_unset,
             exclude_defaults=exclude_defaults,
             exclude_none=exclude_none,
@@ -118,3 +113,39 @@ async def render_expansions(
             new_expansions.update(sub_expansions)
 
     return new_expansions
+
+
+def nested_structure_model_dump(
+    value: Any,
+    includes: dict,
+    exclude_unset: bool,
+    exclude_defaults: bool,
+    exclude_none: bool,
+) -> Any:
+    if isinstance(value, BaseModel):
+        return value.model_dump(
+            by_alias=False,
+            include=includes,
+            exclude=None,
+            exclude_unset=exclude_unset,
+            exclude_defaults=exclude_defaults,
+            exclude_none=exclude_none,
+        )
+
+    if isinstance(value, (list, set, tuple)):
+        return [
+            nested_structure_model_dump(
+                v, includes[idx], exclude_unset, exclude_defaults, exclude_none
+            )
+            for idx, v in enumerate(value)
+        ]
+
+    if isinstance(value, (dict)):
+        return {
+            k: nested_structure_model_dump(
+                v, includes, exclude_unset, exclude_defaults, exclude_none
+            )
+            for k, v in value.items()
+        }
+
+    return value

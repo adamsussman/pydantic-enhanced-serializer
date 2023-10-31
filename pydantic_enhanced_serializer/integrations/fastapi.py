@@ -8,11 +8,9 @@ from fastapi import APIRouter as BaseAPIRouter
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from pydantic.error_wrappers import ErrorWrapper
+from pydantic import BaseModel, ValidationError
 
 from ..render import render_fieldset_model
-from ..schema import augment_schema_with_fieldsets
 
 
 class APIRouter(BaseAPIRouter):
@@ -106,9 +104,6 @@ class APIRouter(BaseAPIRouter):
             )
             field_aware_endpoint_wrapper.__signature__ = new_signature  # type: ignore
 
-        if kwargs.get("response_model"):
-            augment_schema_with_fieldsets(kwargs["response_model"])
-
         return super().add_api_route(path, field_aware_endpoint_wrapper, **kwargs)
 
     async def _get_fields_from_request(self, request: Request) -> List[str]:
@@ -150,16 +145,23 @@ class APIRouter(BaseAPIRouter):
 
         raise RequestValidationError(
             [
-                ErrorWrapper(
-                    exc=TypeError(
-                        "`{self.serializer_request_fields_name}` must be a "
-                        "(optionally  comma saperated) string or "
-                        "list of (optionally comma separated) strings"
-                    ),
-                    loc=(
-                        "body" if from_body else "query",
-                        self.serializer_request_fields_name,
-                    ),
+                ValidationError.from_exception_data(
+                    title="Invalid value",
+                    line_errors=[
+                        {
+                            "type": "invalid",
+                            "msg": (  # type: ignore
+                                "`{self.serializer_request_fields_name}` must be a "
+                                "(optionally  comma saperated) string or "
+                                "list of (optionally comma separated) strings"
+                            ),
+                            "loc": (
+                                "body" if from_body else "query",
+                                self.serializer_request_fields_name,
+                            ),
+                            "input": raw_fields,
+                        }
+                    ],
                 )
             ]
         )

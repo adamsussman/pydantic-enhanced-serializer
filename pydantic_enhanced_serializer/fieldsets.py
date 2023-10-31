@@ -1,24 +1,10 @@
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from inspect import isclass
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, get_origin
 
-from pydantic import BaseModel, fields
+from pydantic import BaseModel
 
 from .models import ExpansionBase, ExpansionInstruction
-
-SEQUENCE_SHAPES = (
-    fields.SHAPE_LIST,
-    fields.SHAPE_SET,
-    fields.SHAPE_TUPLE,
-    fields.SHAPE_TUPLE_ELLIPSIS,
-    fields.SHAPE_SEQUENCE,
-    fields.SHAPE_FROZENSET,
-    fields.SHAPE_ITERABLE,
-)
-
-MAPPING_SHAPES = {
-    fields.SHAPE_DICT,
-    fields.SHAPE_DEFAULTDICT,
-}
 
 
 def fieldset_to_includes(
@@ -101,7 +87,9 @@ def fieldset_to_includes(
     if not isinstance(model, BaseModel):
         return {}, set()
 
-    fieldsets: Optional[dict] = getattr(model.__config__, "fieldsets", None)
+    fieldsets: Optional[dict] = getattr(model, "fieldset_config", {}).get(
+        "fieldsets", None
+    )
     default_fieldset: Optional[Set] = None
     if fieldsets and fieldsets.get("default"):
         default_fieldset = (
@@ -112,7 +100,7 @@ def fieldset_to_includes(
 
     if fieldsets is None or (default_fieldset and "*" in default_fieldset):
         # no fieldsets set or * in default, enable ALL fields
-        fields_request.update([f.name for f in model.__fields__.values()])
+        fields_request.update([name for name in model.model_fields.keys()])
 
         # and add in all expansions
         if fieldsets:
@@ -143,10 +131,14 @@ def fieldset_to_includes(
             field = fieldset
             subfields = set([])
 
-        field_obj = model.__fields__.get(field)
+        field_obj = model.model_fields.get(field)
 
         if field_obj:
-            if field_obj.shape in SEQUENCE_SHAPES:
+            if (
+                (origin := get_origin(field_obj.annotation))
+                and isclass(origin)
+                and issubclass(origin, (list, set, tuple))
+            ):
                 # Field value is a list of models
                 if field not in current_includes_ptr:
                     current_includes_ptr[field] = defaultdict(dict)
@@ -154,7 +146,7 @@ def fieldset_to_includes(
                 # while this could be done abstractly on the model class
                 # and using __all__, we need to examine each item for its
                 # own expansions
-                for idx, item in enumerate(getattr(model, field_obj.name) or []):
+                for idx, item in enumerate(getattr(model, field) or []):
                     sub_includes, sub_expansions = fieldset_to_includes(
                         subfields, item, path + [field, idx]
                     )
@@ -162,13 +154,17 @@ def fieldset_to_includes(
                     current_includes_ptr[field][idx].update(sub_includes)
                     expansions.update(sub_expansions)
 
-            elif field_obj.shape in MAPPING_SHAPES:
+            elif (
+                (origin := get_origin(field_obj.annotation))
+                and isclass(origin)
+                and issubclass(origin, (dict,))
+            ):
                 # Field is a dict, values may or may not contain models
                 # or nested dicts/lists of models
                 if field not in current_includes_ptr:
                     current_includes_ptr[field] = defaultdict(dict)
 
-                for key, value in (getattr(model, field_obj.name) or {}).items():
+                for key, value in (getattr(model, field) or {}).items():
                     sub_includes, sub_expansions = fieldset_to_includes(
                         subfields, value, path + [field, key]
                     )
@@ -182,15 +178,17 @@ def fieldset_to_includes(
                     current_includes_ptr[field] = defaultdict(dict)
 
                 sub_includes, sub_expansions = fieldset_to_includes(
-                    subfields, getattr(model, field_obj.name), path + [field]
+                    subfields, getattr(model, field), path + [field]
                 )
 
                 current_includes_ptr[field].update(sub_includes)
                 expansions.update(sub_expansions)
 
         elif (
-            expansion := getattr(model.__config__, "fieldsets", {}).get(field)
-        ) and isinstance(expansion, ExpansionBase):
+            fieldsets
+            and (expansion := fieldsets.get(field))
+            and isinstance(expansion, ExpansionBase)
+        ):
             if isinstance(model_data, list):
                 # We need to create an expansion per list item
                 for idx, source_model in enumerate(model_data):
@@ -209,7 +207,7 @@ def fieldset_to_includes(
                 # requests have been seen
                 expansion_fieldsets[field].update(subfields)
 
-        elif named_fieldset := getattr(model.__config__, "fieldsets", {}).get(field):
+        elif fieldsets and (named_fieldset := fieldsets.get(field)):
             # Fieldset collection by name
 
             # reference to field of same name that does not exist leads to infinite recursion
@@ -217,7 +215,7 @@ def fieldset_to_includes(
                 fieldset_field
                 for fieldset_field in named_fieldset
                 if (
-                    model.__fields__.get(fieldset_field)
+                    model.model_fields.get(fieldset_field)
                     or (
                         fieldsets
                         and fieldsets.get(fieldset_field)
@@ -231,11 +229,9 @@ def fieldset_to_includes(
             current_includes_ptr.update(sub_includes)
             expansions.update(sub_expansions)
 
-    if expansion_fieldsets:
+    if expansion_fieldsets and fieldsets:
         for expansion, expansion_fields in expansion_fieldsets.items():
-            expansion_definition = getattr(model.__config__, "fieldsets", {}).get(
-                expansion
-            )
+            expansion_definition = fieldsets.get(expansion)
             if not expansion_definition:
                 continue
 

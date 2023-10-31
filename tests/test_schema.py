@@ -1,8 +1,12 @@
-from typing import List, Optional
+from typing import ClassVar, List, Optional
 
 from pydantic import BaseModel
 
-from pydantic_enhanced_serializer import ModelExpansion, augment_schema_with_fieldsets
+from pydantic_enhanced_serializer import (
+    FieldsetConfig,
+    FieldsetGenerateJsonSchema,
+    ModelExpansion,
+)
 
 
 def test_fields_in_fieldset() -> None:
@@ -11,15 +15,14 @@ def test_fields_in_fieldset() -> None:
         field2: str
         field3: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "extra": ["field1", "field2"],
                 "extra2": ["field2", "field3"],
             }
+        )
 
-    augment_schema_with_fieldsets(Thing)
-
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
     assert schema
     assert schema["properties"]
 
@@ -43,23 +46,19 @@ def test_fields_in_default() -> None:
         field2: str
         field3: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["field1", "field2"],
                 "extra": ["field2", "field3"],
             }
+        )
 
-    augment_schema_with_fieldsets(Thing)
-
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
     assert schema
     assert schema["properties"]
 
     assert "description" not in schema["properties"]["field1"]
-    assert (
-        schema["properties"]["field2"]["description"]
-        == "Request by name or using fieldset(s): `extra`."
-    )
+    assert "description" not in schema["properties"]["field2"]
     assert (
         schema["properties"]["field3"]["description"]
         == "Request by name or using fieldset(s): `extra`."
@@ -72,14 +71,13 @@ def test_fields_star_default() -> None:
         field2: str
         field3: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["*"],
             }
+        )
 
-    augment_schema_with_fieldsets(Thing)
-
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
     assert schema
     assert schema["properties"]
 
@@ -94,12 +92,11 @@ def test_fields_named_default() -> None:
         field2: str
         field3: str
 
-        class Config:
-            fieldsets = {"default": ["field1", "field2", "field3"]}
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={"default": ["field1", "field2", "field3"]}
+        )
 
-    augment_schema_with_fieldsets(Thing)
-
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
     assert schema
     assert schema["properties"]
 
@@ -113,35 +110,35 @@ def test_sub_object() -> None:
         sfield1: str
         sfield2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "f1": ["sfield1"],
                 "f2": ["sfield1", "sfield2"],
             }
+        )
 
     class Thing(BaseModel):
         field1: str
         field2: SubThing
 
-        class Config:
-            fieldsets = {"default": ["field1", "field2"]}
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={"default": ["field1", "field2"]}
+        )
 
-    augment_schema_with_fieldsets(Thing)
-
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
     assert schema
     assert schema["properties"]
 
     assert "description" not in schema["properties"]["field1"]
     assert "description" not in schema["properties"]["field2"]
 
-    assert "SubThing" in schema["definitions"]
+    assert "SubThing" in schema["$defs"]
     assert (
-        schema["definitions"]["SubThing"]["properties"]["sfield1"]["description"]
+        schema["$defs"]["SubThing"]["properties"]["sfield1"]["description"]
         == "Request by name or using fieldset(s): `f1`, `f2`."
     )
     assert (
-        schema["definitions"]["SubThing"]["properties"]["sfield2"]["description"]
+        schema["$defs"]["SubThing"]["properties"]["sfield2"]["description"]
         == "Request by name or using fieldset(s): `f2`."
     )
 
@@ -151,35 +148,35 @@ def test_sub_object_list() -> None:
         sfield1: str
         sfield2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "f1": ["sfield1"],
                 "f2": ["sfield1", "sfield2"],
             }
+        )
 
     class Thing(BaseModel):
         field1: str
         field2: List[SubThing]
 
-        class Config:
-            fieldsets = {"default": ["field1", "field2"]}
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={"default": ["field1", "field2"]}
+        )
 
-    augment_schema_with_fieldsets(Thing)
-
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
     assert schema
     assert schema["properties"]
 
     assert "description" not in schema["properties"]["field1"]
     assert "description" not in schema["properties"]["field2"]
 
-    assert "SubThing" in schema["definitions"]
+    assert "SubThing" in schema["$defs"]
     assert (
-        schema["definitions"]["SubThing"]["properties"]["sfield1"]["description"]
+        schema["$defs"]["SubThing"]["properties"]["sfield1"]["description"]
         == "Request by name or using fieldset(s): `f1`, `f2`."
     )
     assert (
-        schema["definitions"]["SubThing"]["properties"]["sfield2"]["description"]
+        schema["$defs"]["SubThing"]["properties"]["sfield2"]["description"]
         == "Request by name or using fieldset(s): `f2`."
     )
 
@@ -189,26 +186,26 @@ def test_expansion_model() -> None:
         efield1: str
         efield2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "f1": ["efield1", "efield2"],
                 "f2": ["efield2"],
             }
+        )
 
     class Thing(BaseModel):
         field1: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "expando": ModelExpansion(
                     expansion_method_name="foo",
                     response_model=ExpandedThing,
                 )
             }
+        )
 
-    augment_schema_with_fieldsets(Thing)
-
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
     assert schema
     assert schema["properties"]
 
@@ -216,7 +213,7 @@ def test_expansion_model() -> None:
     assert schema["properties"]["expando"] == {
         "title": "Expando",
         "description": "Request by name or using fieldset(s): `expando`.",
-        "$ref": "#/components/schemas/ExpandedThing",
+        "$ref": "#/$defs/ExpandedThing",
     }
 
 
@@ -225,26 +222,26 @@ def test_expansion_model_list() -> None:
         efield1: str
         efield2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "f1": ["efield1", "efield2"],
                 "f2": ["efield2"],
             }
+        )
 
     class Thing(BaseModel):
         field1: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "expando": ModelExpansion(
                     expansion_method_name="foo",
                     response_model=List[ExpandedThing],
                 )
             }
+        )
 
-    augment_schema_with_fieldsets(Thing)
-
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
     assert schema
     assert schema["properties"]
 
@@ -254,7 +251,7 @@ def test_expansion_model_list() -> None:
         "description": "Request by name or using fieldset(s): `expando`.",
         "type": "array",
         "items": {
-            "$ref": "#/components/schemas/ExpandedThing",
+            "$ref": "#/$defs/ExpandedThing",
         },
     }
 
@@ -263,17 +260,16 @@ def test_expansion_scalar() -> None:
     class Thing(BaseModel):
         field1: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "expando": ModelExpansion(
                     expansion_method_name="foo",
                     response_model=int,
                 )
             }
+        )
 
-    augment_schema_with_fieldsets(Thing)
-
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
     assert schema
     assert schema["properties"]
 
@@ -289,17 +285,16 @@ def test_expansion_scalar_list() -> None:
     class Thing(BaseModel):
         field1: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "expando": ModelExpansion(
                     expansion_method_name="foo",
                     response_model=List[int],
                 )
             }
+        )
 
-    augment_schema_with_fieldsets(Thing)
-
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
     assert schema
     assert schema["properties"]
 
@@ -321,15 +316,15 @@ def test_optional_expansion_response_model() -> None:
     class Thing(BaseModel):
         field1: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "expando": ModelExpansion(
                     expansion_method_name="foo", response_model=Optional[Expanded]
                 )
             }
+        )
 
-    augment_schema_with_fieldsets(Thing)
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
 
     assert schema
     assert schema["properties"]
@@ -338,7 +333,7 @@ def test_optional_expansion_response_model() -> None:
     assert schema["properties"]["expando"] == {
         "title": "Expando",
         "description": "Request by name or using fieldset(s): `expando`.",
-        "$ref": "#/components/schemas/Expanded",
+        "anyOf": [{"$ref": "#/$defs/Expanded"}, {"type": "null"}],
     }
 
 
@@ -347,13 +342,13 @@ def test_unfieldseted_field_description() -> None:
         field1: str
         field2: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["field1"],
             }
+        )
 
-    augment_schema_with_fieldsets(Thing)
-    schema = Thing.schema()
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
 
     assert schema
     assert schema["properties"]

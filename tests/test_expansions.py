@@ -1,11 +1,11 @@
 import datetime
-from typing import Any, Awaitable, Dict, List, Optional
+from typing import Any, Awaitable, ClassVar, Dict, List, Optional
 
 import pytest
 from aiodataloader import DataLoader  # type: ignore
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from pydantic_enhanced_serializer import ModelExpansion
+from pydantic_enhanced_serializer import FieldsetConfig, ModelExpansion
 
 from .utils import assert_expected_rendered_fieldset_data
 
@@ -15,8 +15,7 @@ def test_singleton_expansion() -> None:
         thing: str
         thing2: str
 
-        class Config:
-            fieldsets: dict = {}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={})
 
     class ResponseModel(BaseModel):
         field1: str
@@ -26,10 +25,11 @@ def test_singleton_expansion() -> None:
         def get_zoom(self, context: Any) -> ExpandedModel:
             return ExpandedModel(thing="what!", thing2="red")
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "zoom": ModelExpansion(expansion_method_name="get_zoom"),
             }
+        )
 
     api_response = ResponseModel(
         field1="one",
@@ -55,8 +55,13 @@ def test_nested_singleton_expansion() -> None:
         def get_sub(self, context: Any) -> SubExpandedModel:
             return SubExpandedModel(field1="foo")
 
-        class Config:
-            fieldsets = {"sub": ModelExpansion(expansion_method_name="get_sub")}
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
+                "sub": ModelExpansion(
+                    response_model=SubExpandedModel, expansion_method_name="get_sub"
+                )
+            },
+        )
 
     class ResponseModel(BaseModel):
         field1: str
@@ -66,10 +71,13 @@ def test_nested_singleton_expansion() -> None:
         def get_zoom(self, context: Any) -> ExpandedModel:
             return ExpandedModel(thing="what!", thing2="red")
 
-        class Config:
-            fieldsets = {
-                "zoom": ModelExpansion(expansion_method_name="get_zoom"),
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
+                "zoom": ModelExpansion(
+                    response_model=ExpandedModel, expansion_method_name="get_zoom"
+                ),
             }
+        )
 
     api_response = ResponseModel(
         field1="one",
@@ -102,13 +110,14 @@ def test_dataloader_expansion() -> None:
         def expand(self, context: dict) -> Awaitable:
             return context["dataloader"].load(self.item_id + 20)
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["item_id", "expanded_model_id", "fieldA"],
                 "expanded_model": ModelExpansion(
                     expansion_method_name="expand",
                 ),
             }
+        )
 
     class ResponseModel(BaseModel):
         items: List[ItemDetail]
@@ -186,8 +195,8 @@ def test_multi_dataloader_expansion() -> None:
         def expand_model2(self, context: Any) -> Awaitable:
             return context["dataloader2"].load(self.item_id + 40)
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["item_id", "expanded_model_id", "fieldA"],
                 "expanded_model": ModelExpansion(
                     expansion_method_name="expand_model",
@@ -196,6 +205,7 @@ def test_multi_dataloader_expansion() -> None:
                     expansion_method_name="expand_model2",
                 ),
             }
+        )
 
     class ResponseModel(BaseModel):
         items: List[ItemDetail]
@@ -269,13 +279,14 @@ def test_dataloader_expansion_nested() -> None:
         def expand_model2(self, context: dict) -> Awaitable:
             return context["dataloader2"].load(self.expanded_model2_id)
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["expanded_model_id", "expanded_model2_id", "field1"],
                 "expanded_model2": ModelExpansion(
                     expansion_method_name="expand_model2",
                 ),
             }
+        )
 
     async def batch_load_expanded_models(keys: List[int]) -> List[ExpandedModel]:
         nonlocal loader1_call_count
@@ -298,13 +309,14 @@ def test_dataloader_expansion_nested() -> None:
         def expand_model(self, context: dict) -> Awaitable:
             return context["dataloader1"].load(self.expanded_model_id)
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["item_id", "expanded_model_id", "fieldA"],
                 "expanded_model": ModelExpansion(
                     expansion_method_name="expand_model",
                 ),
             }
+        )
 
     class ResponseModel(BaseModel):
         items: List[ItemDetail]
@@ -365,12 +377,13 @@ def test_merge_upwards_models() -> None:
         def get_zoom(self, context: Any) -> ExpandedModel:
             return ExpandedModel(thing="what!", thing2="red")
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "zoom": ModelExpansion(
                     expansion_method_name="get_zoom", merge_fields_upwards=True
                 )
             }
+        )
 
     api_response = ResponseModel()
 
@@ -384,12 +397,13 @@ def test_merge_upwards_dict() -> None:
         def get_zoom(self, context: Any) -> dict:
             return {"thing": "what!", "thing2": "red"}
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "zoom": ModelExpansion(
                     expansion_method_name="get_zoom", merge_fields_upwards=True
                 )
             }
+        )
 
     api_response = ResponseModel()
 
@@ -403,8 +417,7 @@ def test_merge_upwards_nested_models() -> None:
         field1: str
         field2: str
 
-        class Config:
-            fieldsets = {"default": ["field2"]}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["field2"]})
 
     class ExpandedModel(BaseModel):
         thing: str
@@ -413,23 +426,25 @@ def test_merge_upwards_nested_models() -> None:
         def get_sub(self, context: Any) -> SubExpandedModel:
             return SubExpandedModel(field1="f1", field2="f2")
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "sub": ModelExpansion(
                     expansion_method_name="get_sub", merge_fields_upwards=True
                 )
             }
+        )
 
     class ResponseModel(BaseModel):
         def get_zoom(self, context: Any) -> ExpandedModel:
             return ExpandedModel(thing="what!", thing2="red")
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "zoom": ModelExpansion(
                     expansion_method_name="get_zoom", merge_fields_upwards=True
                 )
             }
+        )
 
     api_response = ResponseModel()
 
@@ -446,23 +461,25 @@ def test_merge_upwards_nested_dicts() -> None:
         def get_sub(self, context: Any) -> dict:
             return {"field1": "f1", "field2": "f2"}
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "sub": ModelExpansion(
                     expansion_method_name="get_sub", merge_fields_upwards=True
                 )
             }
+        )
 
     class ResponseModel(BaseModel):
         def get_zoom(self, context: Any) -> ExpandedModel:
             return ExpandedModel(thing="what!", thing2="red")
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "zoom": ModelExpansion(
                     expansion_method_name="get_zoom", merge_fields_upwards=True
                 )
             }
+        )
 
     api_response = ResponseModel()
 
@@ -476,8 +493,9 @@ def test_expand_to_scalar_value() -> None:
         def get_zoom(self, context: Any) -> str:
             return "some scalar value"
 
-        class Config:
-            fieldsets = {"zoom": ModelExpansion(expansion_method_name="get_zoom")}
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={"zoom": ModelExpansion(expansion_method_name="get_zoom")}
+        )
 
     api_response = ResponseModel()
 
@@ -491,12 +509,13 @@ def test_expand_to_scalar_value_with_merge() -> None:
         def get_zoom(self, context: Any) -> str:
             return "some scalar value"
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "zoom": ModelExpansion(
                     expansion_method_name="get_zoom", merge_fields_upwards=True
                 )
             }
+        )
 
     class ResponseModel(BaseModel):
         sub: SubModel
@@ -514,8 +533,7 @@ def test_merge_upwards_lists() -> None:
         field1: str
         field2: str
 
-        class Config:
-            fieldsets = {"default": ["field2"]}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["field2"]})
 
     class SubModel(BaseModel):
         thing: str
@@ -524,13 +542,14 @@ def test_merge_upwards_lists() -> None:
         def get_sub(self, context: Any) -> SubExpandedModel:
             return SubExpandedModel(field1=self.thing + "f1", field2=self.thing2 + "f2")
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["thing", "thing2"],
                 "sub": ModelExpansion(
                     expansion_method_name="get_sub", merge_fields_upwards=True
                 ),
             }
+        )
 
     class ResponseModel(BaseModel):
         items: List[SubModel]
@@ -566,8 +585,7 @@ def test_expansion_returns_list() -> None:
     class ExpandedModel(BaseModel):
         field1: str
 
-        class Config:
-            fieldsets = {"default": ["field1"]}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["field1"]})
 
     class ResponseModel(BaseModel):
         f1: str
@@ -579,11 +597,12 @@ def test_expansion_returns_list() -> None:
                 ExpandedModel(field1="field1value3"),
             ]
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["f1"],
                 "sub": ModelExpansion(expansion_method_name="get_sub"),
             }
+        )
 
     api_response = ResponseModel(f1="f1value")
 
@@ -615,11 +634,12 @@ def test_expansion_returns_list_nested() -> None:
                 SubExpandedModel(subfield1=f"{self.field1}_subvalue3"),
             ]
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["field1"],
                 "subsub": ModelExpansion(expansion_method_name="get_subsub"),
             }
+        )
 
     class ResponseModel(BaseModel):
         f1: str
@@ -631,11 +651,12 @@ def test_expansion_returns_list_nested() -> None:
                 ExpandedModel(field1="field1value3"),
             ]
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["f1"],
                 "sub": ModelExpansion(expansion_method_name="get_sub"),
             }
+        )
 
     api_response = ResponseModel(f1="f1value")
 
@@ -678,8 +699,7 @@ def test_expansion_returns_list_of_list() -> None:
     class ExpandedModel(BaseModel):
         field1: str
 
-        class Config:
-            fieldsets = {"default": ["field1"]}
+        fieldset_config: ClassVar = FieldsetConfig(fieldsets={"default": ["field1"]})
 
     class ResponseModel(BaseModel):
         f1: str
@@ -693,11 +713,12 @@ def test_expansion_returns_list_of_list() -> None:
                 [ExpandedModel(field1="field1value3")],
             ]
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["f1"],
                 "sub": ModelExpansion(expansion_method_name="get_sub"),
             }
+        )
 
     api_response = ResponseModel(f1="f1value")
 
@@ -721,11 +742,12 @@ def test_expand_empty_list() -> None:
         def get_sub(self, context: Any) -> List[int]:
             return []
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["f1"],
                 "sub": ModelExpansion(expansion_method_name="get_sub"),
             }
+        )
 
     api_response = ResponseModel(f1="f1value")
 
@@ -751,14 +773,16 @@ def test_expansion_in_default_fieldset() -> None:
         def get_sub(self, context: Any) -> str:
             return "sub" + self.f1
 
-        class Config:
-            orm_mode = True
-            fieldsets = {
+        model_config = ConfigDict(from_attributes=True)
+
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["f1", "f2", "sub"],
                 "g1": ["f3"],
                 "g2": ["f4", "f5"],
                 "sub": ModelExpansion(expansion_method_name="get_sub"),
             }
+        )
 
     class ResponseModel(BaseModel):
         subs: List[SubModel]
@@ -831,14 +855,15 @@ def test_nested_array_expansion_overlap() -> None:
         structure: Optional[Struct]
         created: datetime.datetime
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["entity_id"],
                 "sub_entity": ModelExpansion(
                     response_model=SubEntity, expansion_method_name="get_sub_entity"
                 ),
                 "timestamps": ["created"],
             }
+        )
 
         def get_sub_entity(self, context: Any) -> SubEntity:
             return SubEntity(addr="somewhere")
@@ -848,14 +873,15 @@ def test_nested_array_expansion_overlap() -> None:
     class Thing(BaseModel):
         thing_id: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["thing_id"],
                 "entities": ModelExpansion(
                     response_model=List[Entity],
                     expansion_method_name="get_entities",
                 ),
             }
+        )
 
         def get_entities(self, context: Any) -> List[Entity]:
             return [
@@ -901,28 +927,30 @@ def test_nested_expansion_dict_vary_keys() -> None:
 
     class ItemStructure(BaseModel):
         attr1: str
-        storeys: List[Storey] = Field(min_items=1)
+        storeys: List[Storey] = Field(min_length=1)
 
     class Item(BaseModel):
         item_id: str
         structure: Optional[ItemStructure] = None
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["item_id"],
             }
+        )
 
     class Thing(BaseModel):
         thing_id: str
 
-        class Config:
-            fieldsets = {
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
                 "default": ["thing_id"],
                 "items": ModelExpansion(
                     response_model=List[Item],
                     expansion_method_name="get_items",
                 ),
             }
+        )
 
         def get_items(self, context: Any) -> List[Item]:
             return [
