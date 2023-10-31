@@ -70,16 +70,15 @@ response:
 ## Simple Expansions on Pydantic Models
 
 ```Python
-from pydantic_enhanced_serializer import ModelExpansion
+from typing import ClassVar
+
+from pydantic_enhanced_serializer import FieldsetConfig, ModelExpansion
 
 class File(BaseModel):
     some_attribute: str
     owner_user_id: int
 
-    def lookup_owner_user(self, context: Any) -> User:
-        return get_user_model(self.owner_user_id)
-
-    class Config:
+    fieldset_config: ClassVar = FieldsetConfig(
         fieldsets = {
             "owner_user": ModelExpansion(
                 expansion_method="lookup_owner_user"
@@ -87,6 +86,10 @@ class File(BaseModel):
             ),
             "default": ["some_attribute", "owner_user_id"],
         }
+    )
+
+    def lookup_owner_user(self, context: Any) -> User:
+        return get_user_model(self.owner_user_id)
 ```
 
 In this configuration when an `owner_user` expansion is requested
@@ -193,8 +196,9 @@ class User(BaseModel):
     user_id: int
     name: str
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
 # The batch loader function.  The DataLoader will aggregate as many individual
@@ -233,6 +237,15 @@ class File(BaseModel):
     file_name: str
     owner_user_id: int
 
+    fieldset_config: ClassVar = FieldsetConfig(
+        fieldsets = {
+            "owner_user": ModelExpansion(
+                response_model=User,
+                expansion_method_name="expand_owner_user",
+            )
+        }
+    )
+
     def expand_owner_user(self, context: DataLoader) -> Awaitable:
         # Multiple calls to this in one response will turn into
         # a single call to the dataloader `batch_load_fn`.
@@ -241,14 +254,6 @@ class File(BaseModel):
         # to `render_fieldset_model.expansion_context` below.
 
         return context.load(self.owner_user_id)
-
-    class Config:
-        fieldsets = {
-            "owner_user": ModelExpansion(
-                response_model=User,
-                expansion_method_name="expand_owner_user",
-            )
-        }
 
 
 class ManyFiles(BaseModel):

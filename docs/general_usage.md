@@ -126,9 +126,16 @@ fieldsets="path.to.field1,path.to.field2"
 <a name="config"></a>
 ## Configuring Models and Field lookup behavior
 
-Fieldset definitions are made inside the same "Config" class that pydantic uses.
+Fieldset definitions are made inside class variable called `fieldset_config`.  It is important
+that this by annotated with `ClassVar`, as this is what tells pydantic to ignore it for validation
+and serialization.
 
 ```python
+from typing import ClassVar
+
+from pydantic_enhanced_serializer import FieldsetConfig
+
+
 class MyModel(BaseModel):
     field1: str
     field2: str
@@ -137,12 +144,13 @@ class MyModel(BaseModel):
     field5: str
     some_other_object_id: str
 
-    class Config:
+    fieldset_config: ClassVar = FieldsetConfig(
         fieldsets: dict = {
             "default": ["field1", "field2"],
             "extra_stuff": ["field3", "field4"],
             "some_other_object": ModelExpansion(...),
         }
+    )
 ```
 
 ## Field lookup rules:
@@ -204,10 +212,11 @@ class MyModel(BaseModel):
     field1: str
     field2: str
 
-    class Config:
+    fielset_config: ClassVar = FieldsetConfig(
         fieldsets = {
             "default": ["*"],
         }
+    )
 ```
 
 

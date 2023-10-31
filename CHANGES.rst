@@ -1,3 +1,37 @@
+Version 2.0.0
+-------------
+
+Released TBD
+
+BREAKING CHANGES
+
+- Converted to Pydantic 2.x
+- New Configuration method: No longer uses `class Config:` as that was removed in pydantic 2
+
+    ```
+        from typing import ClassVar
+        from pydantic_enhanced_serializer import FieldsetConfig
+
+        class SomeModel(BaseModel):
+            some_field: str
+
+            model_config = ConfigDict(...)  # new form of class Config
+
+            fieldset_config: ClassVar = FieldsetConfig(
+                fieldsets={ ... as before ... }
+    ```
+
+- New Augmented JSON Schema calling convention:
+
+    ```
+        from pydantic_enhanced_serializer import FieldsetGenerateJsonSchema
+
+        schema = SomeModel.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
+    ```
+
+- Removed `augment_schema_with_fieldsets`, replaced with new `model_json_schema` usage.
+
+
 Version 1.1.5
 -------------
 

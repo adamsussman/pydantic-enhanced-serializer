@@ -59,8 +59,10 @@ Note that `render_fieldset_model` is an async function, so you may need
 to await it, depending on your application.
 
 ```Python
+    from typing import ClassVar
+
     from pydantic import BaseModel
-    from pydantic_enhanced_serializer import render_fieldset_model
+    from pydantic_enhanced_serializer import render_fieldset_model, FieldsetConfig
 
     class MyModel(BaseModel):
         field_1: str
@@ -70,12 +72,13 @@ to await it, depending on your application.
         expensive_field_5: str
         expensive_field_6: str
 
-        class Config:
-            # This is the key config
+        # This is the key config
+        fieldset_config: ClassVar = FieldsetConfig(
             fieldsets = {
                 "default": ["field_1", "field_2"],
                 "extra": ["field_3", "field_4"],
             }
+        )
 ```
 
 Get only "default" fields:
@@ -137,19 +140,21 @@ Result:
         subfield1: str
         subfield2: str
 
-        class Config:
+        fieldset_config: ClassVar = FieldsetConfig(
             fieldsets = {
                 "default": ["subfield1"],
             }
+        )
 
     class MyModel(BaseModel):
         field1: str
         subfield: SubModel
 
-        class Config:
+        fieldset_config: ClassVar = FieldsetConfig(
             fieldsets = {
                 "default": ["field1"],
             }
+        )
 
     result = await render_fieldset_model(
         model=mymodel_instance,
