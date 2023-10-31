@@ -139,3 +139,22 @@ def _get_optional_type(type_: Any) -> Optional[Type]:
             return arg
 
     return None
+
+
+def model_has_fieldsets_defined(model: Any) -> bool:
+    if _is_optional(model):
+        model = _get_optional_type(model)
+
+    if isclass(model) and issubclass(model, BaseModel):
+        if getattr(model, "fieldset_config", None):
+            return True
+
+        else:
+            return any(
+                [
+                    model_has_fieldsets_defined(field.annotation)
+                    for field in model.model_fields.values()
+                ]
+            )
+
+    return False
