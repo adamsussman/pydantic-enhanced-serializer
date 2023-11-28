@@ -1,7 +1,7 @@
 Version 2.0.0
 -------------
 
-Released TBD
+Released 2023-11-27
 
 BREAKING CHANGES
 
