@@ -69,22 +69,36 @@ class FieldsetGenerateJsonSchema(GenerateJsonSchema):
             # If this is a not before seen model class, it needs to be registered
             # before we can $ref it
             model_schema: Optional[CoreSchema] = None
+            model_name = None
+            sub_json_schema: Dict[str, Any] = {}
 
             if isclass(target_type) and issubclass(target_type, BaseModel):
                 model_schema = generator._model_schema(target_type)
-                defs_ref = self.get_defs_ref((model_schema["schema_ref"], "validation"))
+                defs_ref = self.get_defs_ref((model_schema["schema_ref"], self.mode))
+                sub_json_schema = {"$ref": self.ref_template.format(model=defs_ref)}
+                model_name = target_type.__pydantic_core_schema__.get("config", {}).get(
+                    "title"
+                )
+
+                if _is_list(expansion.response_model):
+                    sub_json_schema = {"type": "array", "items": sub_json_schema}
+
+                elif _is_optional(expansion.response_model):
+                    sub_json_schema = {"anyOf": [sub_json_schema, {"type": "null"}]}
 
                 if defs_ref not in self.definitions:
-                    self.definitions[defs_ref] = target_type.model_json_schema()
+                    # guard against recursion on the same object
+                    self.definitions[defs_ref] = {}
+                    self.generate_inner(
+                        target_type.__pydantic_core_schema__  # type: ignore
+                    )
 
-            if model_schema and target_type == expansion.response_model:
-                core_schema = model_schema
             else:
                 core_schema = generator.match_type(expansion.response_model)
+                sub_json_schema = self.generate_inner(core_schema)
 
-            sub_json_schema = self.generate_inner(core_schema)
             json_schema["properties"][expansion_name] = {
-                "title": expansion_name.title().replace("_", " "),
+                "title": (model_name or expansion_name).replace("_", " "),
                 "description": f"Request by name or using fieldset(s): `{expansion_name}`.",
                 **sub_json_schema,
             }
@@ -110,9 +124,7 @@ def _get_target_type(value: Any) -> Any:
     if not get_origin(value) or not isclass(get_origin(value)):
         return value
 
-    if issubclass(get_origin(value), (list, List, set, Set)) and (
-        list_args := get_args(value)
-    ):
+    if _is_list(value) and (list_args := get_args(value)):
         return _get_target_type(list_args[0])
 
     if (
@@ -139,6 +151,14 @@ def _get_optional_type(type_: Any) -> Optional[Type]:
             return arg
 
     return None
+
+
+def _is_list(type_: Any) -> bool:
+    return bool(
+        (origin := get_origin(type_))
+        and isclass(origin)
+        and issubclass(get_origin(type_), (list, List, set, Set))
+    )
 
 
 def model_has_fieldsets_defined(model: Any) -> bool:

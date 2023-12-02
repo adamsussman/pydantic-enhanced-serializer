@@ -193,8 +193,11 @@ def test_expansion_model() -> None:
             }
         )
 
+    from pydantic import Field
+
     class Thing(BaseModel):
         field1: str
+        boo: ExpandedThing = Field(description="yo!")
 
         fieldset_config: ClassVar = FieldsetConfig(
             fieldsets={
@@ -208,10 +211,13 @@ def test_expansion_model() -> None:
     schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
     assert schema
     assert schema["properties"]
+    assert schema["$defs"]
+    assert "ExpandedThing" in schema["$defs"]
+    assert "properties" in schema["$defs"]["ExpandedThing"]
 
     assert "expando" in schema["properties"]
     assert schema["properties"]["expando"] == {
-        "title": "Expando",
+        "title": "ExpandedThing",
         "description": "Request by name or using fieldset(s): `expando`.",
         "$ref": "#/$defs/ExpandedThing",
     }
@@ -247,7 +253,7 @@ def test_expansion_model_list() -> None:
 
     assert "expando" in schema["properties"]
     assert schema["properties"]["expando"] == {
-        "title": "Expando",
+        "title": "ExpandedThing",
         "description": "Request by name or using fieldset(s): `expando`.",
         "type": "array",
         "items": {
@@ -275,7 +281,7 @@ def test_expansion_scalar() -> None:
 
     assert "expando" in schema["properties"]
     assert schema["properties"]["expando"] == {
-        "title": "Expando",
+        "title": "expando",
         "description": "Request by name or using fieldset(s): `expando`.",
         "type": "integer",
     }
@@ -300,7 +306,7 @@ def test_expansion_scalar_list() -> None:
 
     assert "expando" in schema["properties"]
     assert schema["properties"]["expando"] == {
-        "title": "Expando",
+        "title": "expando",
         "description": "Request by name or using fieldset(s): `expando`.",
         "type": "array",
         "items": {
@@ -331,7 +337,7 @@ def test_optional_expansion_response_model() -> None:
 
     assert "expando" in schema["properties"]
     assert schema["properties"]["expando"] == {
-        "title": "Expando",
+        "title": "Expanded",
         "description": "Request by name or using fieldset(s): `expando`.",
         "anyOf": [{"$ref": "#/$defs/Expanded"}, {"type": "null"}],
     }
