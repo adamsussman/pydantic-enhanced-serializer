@@ -1088,3 +1088,65 @@ def test_nested_expansion_dict_vary_keys() -> None:
             }
         },
     )
+
+
+def test_dict_nested_list_dicts() -> None:
+    class Thing(BaseModel):
+        str1: str
+
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
+                "default": ["str1"],
+                "subdata": ModelExpansion(
+                    response_model=Optional[Dict[str, Any]],
+                    expansion_method_name="get_subdata",
+                ),
+            }
+        )
+
+        def get_subdata(self, *args: Any, **kwargs: Any) -> Optional[Dict[str, Any]]:
+            return {
+                "list": [
+                    {
+                        "a": "b",
+                    }
+                ]
+            }
+
+    class ThingContainer(BaseModel):
+        things: List[Thing]
+
+    thing = Thing(
+        str1="foo",
+    )
+
+    things = ThingContainer(things=[thing, thing])
+
+    assert_expected_rendered_fieldset_data(
+        things,
+        "things.subdata",
+        {
+            "things": [
+                {
+                    "str1": "foo",
+                    "subdata": {
+                        "list": [
+                            {
+                                "a": "b",
+                            }
+                        ]
+                    },
+                },
+                {
+                    "str1": "foo",
+                    "subdata": {
+                        "list": [
+                            {
+                                "a": "b",
+                            }
+                        ]
+                    },
+                },
+            ]
+        },
+    )

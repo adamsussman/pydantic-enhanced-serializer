@@ -143,7 +143,11 @@ def nested_structure_model_dump(
     if isinstance(value, (dict)):
         return {
             k: nested_structure_model_dump(
-                v, includes, exclude_unset, exclude_defaults, exclude_none
+                v,
+                includes.get(k) or {"__all__": {}},
+                exclude_unset,
+                exclude_defaults,
+                exclude_none,
             )
             for k, v in value.items()
         }
