@@ -1,3 +1,11 @@
+Version 2.1.1
+-------------
+
+Released 2024-01-14
+
+- Fix index exception in expansions when expanded data is a dict with a nested list of dicts.
+
+
 Version 2.1.0
 -------------
 
@@ -6,6 +14,7 @@ Released 2023-12-01
 - Fix how the json schema generator handles references to request, response and expansion
   objects, and especially references to objects nested inside them.  Make sure such references
   are propagated correctly.
+
 
 Version 2.0.0
 -------------
