@@ -79,12 +79,16 @@ class APIRouter(BaseAPIRouter):
                 content = await render_fieldset_model(
                     model=result,
                     fieldsets=fields_request,
-                    maximum_expansion_depth=maximum_expansion_depth
-                    if maximum_expansion_depth is not None
-                    else self.serializer_maximum_expansion_depth,
-                    raise_error_on_expansion_not_found=raise_error_on_expansion_not_found
-                    if raise_error_on_expansion_not_found is not None
-                    else self.serializer_raise_error_on_expansion_not_found,
+                    maximum_expansion_depth=(
+                        maximum_expansion_depth
+                        if maximum_expansion_depth is not None
+                        else self.serializer_maximum_expansion_depth
+                    ),
+                    raise_error_on_expansion_not_found=(
+                        raise_error_on_expansion_not_found
+                        if raise_error_on_expansion_not_found is not None
+                        else self.serializer_raise_error_on_expansion_not_found
+                    ),
                     expansion_context=request,
                     exclude_unset=kwargs.get("response_model_exclude_unset", False),
                     exclude_defaults=kwargs.get(
