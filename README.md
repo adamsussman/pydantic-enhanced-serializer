@@ -53,7 +53,7 @@ See [documentation](https://github.com/adamsussman/pydantic-enhanced-serializer/
 
 ## Quickstart Example - Python
 
-Basically: use `render_fieldset_model` instead of `model.dict()` or `model.json()`.
+Basically: use `render_fieldset_model` instead of `model.model_dump()` or `model.model_dump_json()`.
 
 Note that `render_fieldset_model` is an async function, so you may need
 to await it, depending on your application.
@@ -93,7 +93,7 @@ Get only "default" fields:
         expensive_field_6="field6 value",
     )
 
-    # instead of model.dict() do:
+    # instead of model.model_dump() do:
     result = await render_fieldset_model(
         model=model,
         fieldsets=[]

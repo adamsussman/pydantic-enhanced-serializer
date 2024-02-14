@@ -1,6 +1,6 @@
 # Configuration and Usage
 
-## Use `pydantic_enhanced_serialzier.render_fieldset_model` instead of `model.dict()`
+## Use `pydantic_enhanced_serialzier.render_fieldset_model` instead of `model.model_dump()`
 
 ```Python
     from pydantic_enhanced_serialzier import render_fieldset_model
@@ -47,13 +47,13 @@ Parameters:
     Defaults to None.
 
 * `exclude_unset`:
-    Same as [Pydantic's model.dict(...)](https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict)
+    Same as [Pydantic's model.model_dump(...)](https://docs.pydantic.dev/latest/api/base_model/#pydantic.BaseModel.model_dump)
 
 * `exclude_defaults`:
-    Same as [Pydantic's model.dict(...)](https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict)
+    Same as [Pydantic's model.model_dump(...)](https://docs.pydantic.dev/latest/api/base_model/#pydantic.BaseModel.model_dump)
 
 * `exclude_none`:
-    Same as [Pydantic's model.dict(...)](https://pydantic-docs.helpmanual.io/usage/exporting_models/#modeldict)
+    Same as [Pydantic's model.model_dump(...)](https://docs.pydantic.dev/latest/api/base_model/#pydantic.BaseModel.model_dump)
 
 
 <a name="fieldsetsparam"></a>
@@ -158,7 +158,7 @@ class MyModel(BaseModel):
 ### 1. No Config
 
 If `Config.fieldsets` is not present at all, then this model will
-behave like a default pydantic model when `model.dict()` is called:
+behave like a default pydantic model when `model.model_dump()` is called:
 ALL fields will be returned regardless of the contents of the
 `fieldsets` parameter.
 
