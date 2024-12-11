@@ -1,6 +1,9 @@
 from inspect import isclass
 from typing import Any, Dict, List, Optional, Set, Type, Union, get_args, get_origin
 
+import pydantic
+from packaging.version import Version
+from packaging.version import parse as parse_version
 from pydantic import BaseModel
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
@@ -8,6 +11,9 @@ from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 from pydantic_core.core_schema import CoreSchema, ModelSchema
 
 from .models import ExpansionBase
+
+pydantic_version = parse_version(pydantic.__version__)
+namespace_refactored_pydantic_version = Version("2.10")
 
 
 class FieldsetGenerateJsonSchema(GenerateJsonSchema):
@@ -53,9 +59,12 @@ class FieldsetGenerateJsonSchema(GenerateJsonSchema):
                 )
 
         # detail expansions
-        generator = GenerateSchema(
-            config_wrapper=ConfigWrapper(config={}), types_namespace=None
-        )
+        if pydantic_version < namespace_refactored_pydantic_version:
+            generator = GenerateSchema(
+                config_wrapper=ConfigWrapper(config={}), types_namespace=None  # type: ignore
+            )
+        else:
+            generator = GenerateSchema(config_wrapper=ConfigWrapper(config={}))  # type: ignore
 
         for expansion_name, expansion in fieldsets.items():
             if not isinstance(expansion, ExpansionBase):
