@@ -1,3 +1,11 @@
+Version 2.1.2
+-------------
+
+Released 2024-12-10
+
+- Support for minor breaking changes in pydantic 2.10
+
+
 Version 2.1.1
 -------------
 
