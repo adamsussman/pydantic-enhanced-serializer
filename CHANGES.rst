@@ -1,3 +1,16 @@
+Version 2.2.0
+-------------
+
+Released TBD
+
+- Make sure packaging module is installed as requirement. (mikep-wmt)
+  https://github.com/adamsussman/pydantic-enhanced-serializer/pull/2
+  
+- Add support for tox, remove support for Python < 3.9. (noirbizarre)
+  https://github.com/adamsussman/pydantic-enhanced-serializer/pull/1
+
+
+
 Version 2.1.2
 -------------
 
