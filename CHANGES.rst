@@ -1,7 +1,7 @@
 Version 2.2.0
 -------------
 
-Released TBD
+Released 2025-04-24
 
 - Make sure packaging module is installed as requirement. (mikep-wmt)
   https://github.com/adamsussman/pydantic-enhanced-serializer/pull/2
