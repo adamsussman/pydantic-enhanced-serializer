@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 from asyncio import get_event_loop, isfuture
 from typing import Any, Awaitable, Dict, List, Optional, TypedDict, Union
