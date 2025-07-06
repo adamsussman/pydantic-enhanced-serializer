@@ -1,4 +1,4 @@
-from typing import ClassVar, List, Optional
+from typing import Annotated, ClassVar, List, Optional, Union
 
 from pydantic import BaseModel
 
@@ -364,4 +364,138 @@ def test_unfieldseted_field_description() -> None:
         "title": "Field2",
         "description": "Not returned by default.  Request this field by name.",
         "type": "string",
+    }
+
+
+def test_expansion_union_response() -> None:
+    class ExpandedA(BaseModel):
+        efield1: str
+
+    class ExpandedB(BaseModel):
+        efield2: str
+
+    class Thing(BaseModel):
+        field1: str
+
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
+                "expando": ModelExpansion(
+                    expansion_method_name="foo",
+                    response_model=Union[ExpandedA, ExpandedB],
+                )
+            }
+        )
+
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
+
+    assert schema
+    assert schema["properties"]
+
+    assert "expando" in schema["properties"]
+    assert schema["properties"]["expando"] == {
+        "title": "expando",
+        "description": "Request by name or using fieldset(s): `expando`.",
+        "anyOf": [{"$ref": "#/$defs/ExpandedA"}, {"$ref": "#/$defs/ExpandedB"}],
+    }
+
+
+def test_expansion_annotated_union_response() -> None:
+    class ExpandedA(BaseModel):
+        efield1: str
+
+    class ExpandedB(BaseModel):
+        efield2: str
+
+    class Thing(BaseModel):
+        field1: str
+
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
+                "expando": ModelExpansion(
+                    expansion_method_name="foo",
+                    response_model=Annotated[Union[ExpandedA, ExpandedB], "blank"],
+                )
+            }
+        )
+
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
+
+    assert schema
+    assert schema["properties"]
+
+    assert "expando" in schema["properties"]
+    assert schema["properties"]["expando"] == {
+        "title": "expando",
+        "description": "Request by name or using fieldset(s): `expando`.",
+        "anyOf": [{"$ref": "#/$defs/ExpandedA"}, {"$ref": "#/$defs/ExpandedB"}],
+    }
+
+
+def test_expansion_list_union_response() -> None:
+    class ExpandedA(BaseModel):
+        efield1: str
+
+    class ExpandedB(BaseModel):
+        efield2: str
+
+    class Thing(BaseModel):
+        field1: str
+
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
+                "expando": ModelExpansion(
+                    expansion_method_name="foo",
+                    response_model=List[Union[ExpandedA, ExpandedB]],
+                )
+            }
+        )
+
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
+
+    assert schema
+    assert schema["properties"]
+
+    assert "expando" in schema["properties"]
+    assert schema["properties"]["expando"] == {
+        "title": "expando",
+        "description": "Request by name or using fieldset(s): `expando`.",
+        "type": "array",
+        "items": {
+            "anyOf": [{"$ref": "#/$defs/ExpandedA"}, {"$ref": "#/$defs/ExpandedB"}],
+        },
+    }
+
+
+def test_expansion_annotated_list_union_response() -> None:
+    class ExpandedA(BaseModel):
+        efield1: str
+
+    class ExpandedB(BaseModel):
+        efield2: str
+
+    class Thing(BaseModel):
+        field1: str
+
+        fieldset_config: ClassVar = FieldsetConfig(
+            fieldsets={
+                "expando": ModelExpansion(
+                    expansion_method_name="foo",
+                    response_model=Annotated[List[Union[ExpandedA, ExpandedB]], "blah"],
+                )
+            }
+        )
+
+    schema = Thing.model_json_schema(schema_generator=FieldsetGenerateJsonSchema)
+
+    assert schema
+    assert schema["properties"]
+
+    assert "expando" in schema["properties"]
+    assert schema["properties"]["expando"] == {
+        "title": "expando",
+        "description": "Request by name or using fieldset(s): `expando`.",
+        "type": "array",
+        "items": {
+            "anyOf": [{"$ref": "#/$defs/ExpandedA"}, {"$ref": "#/$defs/ExpandedB"}],
+        },
     }

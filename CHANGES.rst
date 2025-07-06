@@ -1,3 +1,12 @@
+Version 2.2.1
+-------------
+
+Released TBA
+
+- Rework json schema generation for expansions to support Annotated and Union
+  types (and the various nestings thereof).
+
+
 Version 2.2.0
 -------------
 

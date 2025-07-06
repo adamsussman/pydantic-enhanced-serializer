@@ -1,5 +1,16 @@
 from inspect import isclass
-from typing import Any, Dict, List, Optional, Set, Type, Union, get_args, get_origin
+from typing import (
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Type,
+    Union,
+    get_args,
+    get_origin,
+)
 
 import pydantic
 from packaging.version import Version
@@ -14,6 +25,8 @@ from .models import ExpansionBase
 
 pydantic_version = parse_version(pydantic.__version__)
 namespace_refactored_pydantic_version = Version("2.10")
+
+DEFS_PREFIX_LENGTH = 8  # "#/$defs/"
 
 
 class FieldsetGenerateJsonSchema(GenerateJsonSchema):
@@ -30,6 +43,9 @@ class FieldsetGenerateJsonSchema(GenerateJsonSchema):
 
         # for regular fields, set a description based on their fieldset configuration
         for field_name in model.model_fields.keys():
+            if field_name not in json_schema.get("properties", {}):
+                continue
+
             field_schema = json_schema["properties"][field_name]
             fieldset_names = [
                 fieldset_name
@@ -73,46 +89,112 @@ class FieldsetGenerateJsonSchema(GenerateJsonSchema):
             if expansion.response_model is None:
                 continue
 
-            target_type = _get_target_type(expansion.response_model)
+            target_type = self.find_first_non_annotated_type(expansion.response_model)
+            self.cache_inner_target_refs(target_type, generator)
 
-            # If this is a not before seen model class, it needs to be registered
-            # before we can $ref it
-            model_schema: Optional[CoreSchema] = None
-            model_name = None
-            sub_json_schema: Dict[str, Any] = {}
+            expansion_description = (
+                f"Request by name or using fieldset(s): `{expansion_name}`."
+            )
 
             if isclass(target_type) and issubclass(target_type, BaseModel):
-                model_schema = generator._model_schema(target_type)
-                defs_ref = self.get_defs_ref((model_schema["schema_ref"], self.mode))
-                sub_json_schema = {"$ref": self.ref_template.format(model=defs_ref)}
-                model_name = target_type.__pydantic_core_schema__.get("config", {}).get(
-                    "title"
+                model_schema: Optional[CoreSchema] = generator._model_schema(
+                    target_type
                 )
-
-                if _is_list(expansion.response_model):
-                    sub_json_schema = {"type": "array", "items": sub_json_schema}
-
-                elif _is_optional(expansion.response_model):
-                    sub_json_schema = {"anyOf": [sub_json_schema, {"type": "null"}]}
-
-                if defs_ref not in self.definitions:
-                    # guard against recursion on the same object
-                    self.definitions[defs_ref] = {}
-                    self.generate_inner(
-                        target_type.__pydantic_core_schema__  # type: ignore
+                if not model_schema:
+                    raise TypeError(
+                        f"Could not find model schema for {type(target_type)}"
                     )
 
+                defs_ref = self.get_defs_ref((model_schema["schema_ref"], self.mode))
+                title = (
+                    self.definitions.get(defs_ref, {}).get("title") or expansion_name
+                )
+
+                expansion_schema = {
+                    "title": title,
+                    "$ref": self.ref_template.format(model=defs_ref),
+                }
             else:
-                core_schema = generator.match_type(expansion.response_model)
-                sub_json_schema = self.generate_inner(core_schema)
+                core_schema = generator.match_type(target_type)
+                expansion_schema = self.generate_inner(core_schema)
+                expansion_schema["title"] = (
+                    self.find_first_ref_title(expansion_schema) or expansion_name
+                )
 
             json_schema["properties"][expansion_name] = {
-                "title": (model_name or expansion_name).replace("_", " "),
-                "description": f"Request by name or using fieldset(s): `{expansion_name}`.",
-                **sub_json_schema,
+                "description": expansion_description,
+                **expansion_schema,
             }
 
         return json_schema
+
+    def find_first_ref_title(self, schema: Any) -> Optional[str]:
+        if (
+            isinstance(schema, dict)
+            and "$ref" in schema
+            and (
+                sub_schema := self.definitions.get(schema["$ref"][DEFS_PREFIX_LENGTH:])
+            )
+        ):
+            return sub_schema.get("title")
+
+        if isinstance(schema, dict):
+            for value in schema.values():
+                if title := self.find_first_ref_title(value):
+                    return title
+
+        if isinstance(schema, list):
+            # in list cases, picking the first, or any, model is wrong, let the
+            # caller use something more generic UNLESS this is an Optional:
+            # (anyOf [Something, null])
+            if (
+                len(schema) == 2
+                and schema[0].get("type") != "null"
+                and schema[1].get("type") == "null"
+            ):
+                return self.find_first_ref_title(schema[0])
+
+            return None
+
+        return None
+
+    def find_first_non_annotated_type(self, target_type: Any) -> Any:
+        if get_origin(target_type) == Annotated:
+            return self.find_first_non_annotated_type(get_args(target_type)[0])
+
+        return target_type
+
+    def cache_inner_target_refs(self, target_type: Any, generator) -> None:
+        target_type = self.find_first_non_annotated_type(target_type)
+
+        if _is_optional(target_type):
+            target_type = _get_optional_type(target_type)
+
+        if get_origin(target_type) == Union:
+            for sub_target in get_args(target_type):
+                self.cache_inner_target_refs(sub_target, generator)
+
+        if _is_list(target_type) and (list_args := get_args(target_type)):
+            self.cache_inner_target_refs(list_args[0], generator)
+
+        if (
+            isclass(get_origin(target_type))
+            and issubclass(get_origin(target_type), (dict, Dict))
+            and (dict_args := get_args(target_type))
+            and len(dict_args) == 2
+        ):
+            self.cache_inner_target_refs(dict_args[1], generator)
+
+        if isclass(target_type) and issubclass(target_type, BaseModel):
+            model_schema: Optional[CoreSchema] = generator._model_schema(target_type)
+            if not model_schema:
+                raise TypeError(f"Could not find model schema for {type(target_type)}")
+
+            defs_ref = self.get_defs_ref((model_schema["schema_ref"], self.mode))
+            if defs_ref not in self.definitions:
+                # guard against recursion on the same object
+                self.definitions[defs_ref] = {}
+                self.generate_inner(target_type.__pydantic_core_schema__)  # type: ignore
 
 
 def _concat_description(description: Optional[str], additional: str) -> str:
@@ -123,27 +205,6 @@ def _concat_description(description: Optional[str], additional: str) -> str:
         return " ".join([description, additional])
     else:
         return ". ".join([description, additional])
-
-
-def _get_target_type(value: Any) -> Any:
-    """Find the underlying contained type and its level of "structured" (dict/list) nesting"""
-    if _is_optional(value):
-        value = _get_optional_type(value)
-
-    if not get_origin(value) or not isclass(get_origin(value)):
-        return value
-
-    if _is_list(value) and (list_args := get_args(value)):
-        return _get_target_type(list_args[0])
-
-    if (
-        issubclass(get_origin(value), (dict, Dict))
-        and (dict_args := get_args(value))
-        and len(dict_args) == 2
-    ):
-        return _get_target_type(dict_args[1])
-
-    return value
 
 
 def _is_optional(type_: Any) -> bool:
