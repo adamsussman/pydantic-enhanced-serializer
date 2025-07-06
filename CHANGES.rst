@@ -1,7 +1,7 @@
 Version 2.2.1
 -------------
 
-Released TBA
+Released 2025-07-06
 
 - Rework json schema generation for expansions to support Annotated and Union
   types (and the various nestings thereof).
