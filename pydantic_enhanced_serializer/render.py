@@ -59,13 +59,9 @@ async def render_expansions(
             source_model=expansion.source_model, context=expansion_context
         )
 
-    await gather(*[e.future for e in expansions if e.future])
+    results = await gather(*[e.future for e in expansions if e.future])
 
-    for expansion in expansions:
-        expanded_value = None
-        if expansion.future:
-            expanded_value = await expansion.future
-
+    for expansion, expanded_value in zip(expansions, results):
         if expanded_value is None:
             if raise_error_on_expansion_not_found:
                 raise Exception(
