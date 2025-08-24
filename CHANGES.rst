@@ -1,3 +1,11 @@
+Version 2.2.2
+-------------
+
+Release 2025-08-23
+
+- Fix bug re-awating already awaited expansion co-routines
+
+
 Version 2.2.1
 -------------
 
